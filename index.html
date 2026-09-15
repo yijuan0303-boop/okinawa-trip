@@ -1911,47 +1911,39 @@
         };
 
         const refreshBotRate = async () => {
-           rateLoading.value = true;
-           try {
-             // Taiwan Bank's published CSV endpoint.
-             const res = await fetch('https://rate.bot.com.tw/xrt/flcsv/0/day?ts=' + Date.now(), {
-               cache: 'no-store'
-             });
-             if (!res.ok) throw new Error('rate request failed');
-             const csv = await res.text();
-             const rows = csv.split(/\r?\n/).map(r => r.split(','));
-             const row = rows.find(r => (r[0] || '').includes('日圓'));
-             if (!row) throw new Error('JPY row not found');
-             // BOT daily CSV: cash buy/sell are columns 3/4; spot buy/sell are 5/6 (1-based),
-             // represented here as indices 2/3 and 4/5.
-             const cashSell = parseFloat((row[3] || '').replace(/,/g, ''));
-             const spotSell = parseFloat((row[5] || '').replace(/,/g, ''));
-             if (!Number.isFinite(spotSell) || !Number.isFinite(cashSell)) throw new Error('invalid rate');
-             botRateSell.value = spotSell;
-             botCashSell.value = cashSell;
-             exchangeRate.value = spotSell; // use the latest BOT spot sell for TWD estimation
-             botRateUpdated.value = new Date().toLocaleString('zh-TW', {
-               year:'numeric', month:'2-digit', day:'2-digit',
-               hour:'2-digit', minute:'2-digit'
-             });
-             localStorage.setItem('okinawaBotRate', JSON.stringify({
-               botRateSell: spotSell, botCashSell: cashSell, botRateUpdated: botRateUpdated.value
-             }));
-           } catch (e) {
-             try {
-               const cached = JSON.parse(localStorage.getItem('okinawaBotRate'));
-               if (cached) {
-                 botRateSell.value = Number(cached.botRateSell) || null;
-                 botCashSell.value = Number(cached.botCashSell) || null;
-                 botRateUpdated.value = cached.botRateUpdated || '';
-                 if (botRateSell.value) exchangeRate.value = botRateSell.value;
-               }
-             } catch (_) {}
-             alert('目前無法取得臺銀最新匯率，已保留上次成功更新的資料。');
-           } finally {
-             rateLoading.value = false;
-           }
-         };
+  rateLoading.value = true;
+  try {
+    const res = await fetch('./rate.json?ts=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('rate.json request failed');
+    const data = await res.json();
+    const spotSell = Number(data.spotSell);
+    const cashSell = Number(data.cashSell);
+    if (!Number.isFinite(spotSell) || !Number.isFinite(cashSell)) throw new Error('invalid rate');
+    botRateSell.value = spotSell;
+    botCashSell.value = cashSell;
+    exchangeRate.value = spotSell;
+    botRateUpdated.value = data.updatedAt || '';
+    localStorage.setItem('okinawaBotRate', JSON.stringify({
+      botRateSell: spotSell,
+      botCashSell: cashSell,
+      botRateUpdated: botRateUpdated.value,
+      source: '臺灣銀行'
+    }));
+  } catch (e) {
+    const cached = JSON.parse(localStorage.getItem('okinawaBotRate') || 'null');
+    if (cached && cached.botRateSell) {
+      botRateSell.value = Number(cached.botRateSell);
+      botCashSell.value = Number(cached.botCashSell) || null;
+      botRateUpdated.value = cached.botRateUpdated || '';
+      exchangeRate.value = botRateSell.value;
+      console.warn('目前無法取得臺銀最新匯率，已保留上次成功更新的資料。');
+    } else {
+      console.warn('目前無法取得臺銀匯率，請稍後再試。');
+    }
+  } finally {
+    rateLoading.value = false;
+  }
+};
 
          const saveData = () => {
           try {
