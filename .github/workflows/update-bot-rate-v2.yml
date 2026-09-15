@@ -24,7 +24,6 @@ jobs:
           from datetime import datetime, timezone, timedelta
           from pathlib import Path
 
-          # 1) Fetch Taiwan Bank official daily CSV server-side.
           req = urllib.request.Request(
               'https://rate.bot.com.tw/xrt/flcsv/0/day',
               headers={'User-Agent': 'Mozilla/5.0'}
@@ -32,13 +31,19 @@ jobs:
           with urllib.request.urlopen(req, timeout=30) as r:
               raw = r.read().decode('utf-8-sig')
           rows = list(csv.reader(io.StringIO(raw)))
-          jpy = next((row for row in rows if row and row[0].strip().upper() == 'JPY'), None)
+
+          # Taiwan Bank's CSV may use either "JPY" or "日圓 (JPY)" in the currency field.
+          jpy = next(
+              (row for row in rows if any('JPY' in cell.upper() for cell in row)),
+              None
+          )
           if not jpy or len(jpy) < 6:
               raise SystemExit('Taiwan Bank JPY row not found or CSV format changed')
 
           cash_sell = float(jpy[3].strip())
           spot_sell = float(jpy[5].strip())
           updated = datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
+
           data = {
               'currency': 'JPY',
               'cashSell': cash_sell,
@@ -47,10 +52,13 @@ jobs:
               'source': '臺灣銀行',
               'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW'
           }
-          Path('rate.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          Path('rate.json').write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8'
+          )
           print(json.dumps(data, ensure_ascii=False))
 
-          # 2) Make the live website read same-origin rate.json, avoiding browser CORS.
+          # Make the live website read same-origin rate.json, avoiding browser CORS.
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
           pattern = r"const refreshBotRate = async \(\) => \{.*?^\s*\};"
@@ -67,7 +75,12 @@ jobs:
               botCashSell.value = cashSell;
               exchangeRate.value = spotSell;
               botRateUpdated.value = data.updatedAt || '';
-              localStorage.setItem('okinawaBotRate', JSON.stringify({ botRateSell: spotSell, botCashSell: cashSell, botRateUpdated: botRateUpdated.value, source: '臺灣銀行' }));
+              localStorage.setItem('okinawaBotRate', JSON.stringify({
+                botRateSell: spotSell,
+                botCashSell: cashSell,
+                botRateUpdated: botRateUpdated.value,
+                source: '臺灣銀行'
+              }));
             } catch (e) {
               const cached = JSON.parse(localStorage.getItem('okinawaBotRate') || 'null');
               if (cached && cached.botRateSell) {
