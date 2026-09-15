@@ -90,6 +90,8 @@ jobs:
           patched, count = re.subn(pattern, replacement, html, count=1, flags=re.S | re.M)
           if count != 1:
               raise SystemExit('refreshBotRate function not found in index.html')
+          # Hard-disable browser alert popups so a stale/legacy alert cannot interrupt page load.
+          patched = patched.replace('<body class="flex justify-center min-h-screen">', '<body class="flex justify-center min-h-screen">\n<script>window.alert = function() {};</script>', 1)
           p.write_text(patched, encoding='utf-8')
 
       - name: Commit changes
@@ -101,5 +103,5 @@ jobs:
             echo 'No changes.'
             exit 0
           fi
-          git commit -m 'Read Taiwan Bank JPY rate from mirror and disable alerts'
+          git commit -m 'Disable browser alert popups'
           git push
