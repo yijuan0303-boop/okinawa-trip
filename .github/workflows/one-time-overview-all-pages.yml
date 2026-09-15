@@ -1,0 +1,71 @@
+name: One-time overview all pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch overview
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Replace the small overview summary with a real all-pages overview shell.
+          start = s.find('<!-- ================= 總覽 ================= -->')
+          end = s.find('<!-- ================= 頁籤 1: 每日行程')
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('overview markers not found')
+          overview = '''<!-- ================= 總覽：所有頁面 ================= -->
+      <section v-if="currentTab === 'overview'" class="space-y-5">
+        <div class="px-1 pt-1">
+          <div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP OVERVIEW</div>
+          <h2 class="editorial-title text-[30px] text-[#183F46] mt-1">旅程總覽</h2>
+          <p class="text-[11px] text-stone-400 mt-2">所有功能一次看完 · 行程、百貨、旅前、分帳、優惠券</p>
+        </div>
+        <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · 2026</div>
+            <div class="editorial-title text-[26px] mt-2">{{ tripInfo.title }}</div>
+            <div class="text-[11px] opacity-75 mt-2">{{ tripInfo.dates }} · {{ tripInfo.subtitle }}</div>
+          </div>
+          <div class="island-glow"></div>
+        </div>
+      </section>
+
+      '''
+          s = s[:start] + overview + s[end:]
+
+          # On the overview tab, render every existing page section as well.
+          replacements = {
+            'v-if="currentTab === \'itinerary\'"': 'v-if="currentTab === \'overview\' || currentTab === \'itinerary\'"',
+            'v-if="currentTab === \'malls\'"': 'v-if="currentTab === \'overview\' || currentTab === \'malls\'"',
+            'v-if="currentTab === \'coupons\'"': 'v-if="currentTab === \'overview\' || currentTab === \'coupons\'"',
+            'v-if="currentTab === \'finance\'"': 'v-if="currentTab === \'overview\' || currentTab === \'finance\'"',
+            'v-if="currentTab === \'guide\'"': 'v-if="currentTab === \'overview\' || currentTab === \'guide\'"',
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit('missing section condition: ' + old)
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Remove one-time workflow and commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-time-overview-all-pages.yml
+          git add index.html
+          git commit -m 'Make overview show all page content'
+          git push
