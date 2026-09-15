@@ -2,6 +2,9 @@ name: Update Taiwan Bank JPY rate
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/update-bot-rate.yml'
   schedule:
     - cron: '*/5 * * * *'
 
