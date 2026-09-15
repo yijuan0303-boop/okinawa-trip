@@ -24,40 +24,27 @@ jobs:
           from datetime import datetime, timezone, timedelta
           from pathlib import Path
 
-          # Use Taiwan Bank's official English rate page so the currency name is ASCII.
-          url = 'https://rate.bot.com.tw/xrt?Lang=en-US'
+          # Taiwan Bank data mirror, refreshed from the bank's public quote data.
+          url = 'https://raw.githubusercontent.com/haotool/app/data/public/rates/latest.json'
           req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
           with urllib.request.urlopen(req, timeout=30) as r:
-              html = r.read().decode('utf-8', errors='replace')
+              data_src = json.loads(r.read().decode('utf-8', errors='replace'))
 
-          row_match = re.search(r'<tr[^>]*>(?:(?!</tr>).)*?Japanese Yen\s*\(JPY\)(?:(?!</tr>).)*?</tr>', html, re.S | re.I)
-          if not row_match:
-              raise SystemExit('Taiwan Bank JPY row not found')
-          row = row_match.group(0)
+          jpy = data_src.get('details', {}).get('JPY', {})
+          spot_sell = jpy.get('spot', {}).get('sell')
+          cash_sell = jpy.get('cash', {}).get('sell')
+          if not isinstance(spot_sell, (int, float)) or not isinstance(cash_sell, (int, float)):
+              raise SystemExit('Taiwan Bank JPY rate not found in mirror data')
 
-          def read_rate(label):
-              pattern = r'data-table=["\']' + re.escape(label) + r'["\'][^>]*>(.*?)</td>'
-              m = re.search(pattern, row, re.S | re.I)
-              if not m:
-                  raise SystemExit('Taiwan Bank rate cell not found: ' + label)
-              text = re.sub(r'<[^>]+>', ' ', m.group(1))
-              text = re.sub(r'&nbsp;|\s+', ' ', text).strip()
-              n = re.search(r'-?\d+(?:\.\d+)?', text)
-              if not n:
-                  raise SystemExit('Taiwan Bank rate value invalid: ' + label)
-              return float(n.group(0))
-
-          cash_sell = read_rate('Cash Selling')
-          spot_sell = read_rate('Spot Selling')
-          updated = datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
-
+          updated = data_src.get('updateTime') or datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
           data = {
               'currency': 'JPY',
-              'cashSell': cash_sell,
-              'spotSell': spot_sell,
+              'cashSell': float(cash_sell),
+              'spotSell': float(spot_sell),
               'updatedAt': updated,
               'source': '臺灣銀行',
-              'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW'
+              'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW',
+              'transport': 'Taiwan Bank data mirror (HaoRate providerId=bot)'
           }
           Path('rate.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           print(json.dumps(data, ensure_ascii=False))
@@ -114,5 +101,5 @@ jobs:
             echo 'No changes.'
             exit 0
           fi
-          git commit -m 'Read Taiwan Bank JPY rate from English page'
+          git commit -m 'Read Taiwan Bank JPY rate from mirror and disable alerts'
           git push
