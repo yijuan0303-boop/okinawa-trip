@@ -33,22 +33,50 @@ jobs:
           if not isinstance(spot, (int, float)) or not isinstance(cash, (int, float)):
               raise SystemExit('Taiwan Bank JPY rate not found')
           updated = src.get('updateTime') or datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
-          data = {
-              'currency': 'JPY',
-              'cashSell': float(cash),
-              'spotSell': float(spot),
-              'updatedAt': updated,
-              'source': '臺灣銀行',
-              'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW',
-              'transport': 'Taiwan Bank data mirror (HaoRate providerId=bot)'
-          }
+          data = {'currency':'JPY','cashSell':float(cash),'spotSell':float(spot),'updatedAt':updated,'source':'臺灣銀行','sourceUrl':'https://rate.bot.com.tw/xrt?Lang=zh-TW','transport':'Taiwan Bank data mirror (HaoRate providerId=bot)'}
           Path('rate.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          print(json.dumps(data, ensure_ascii=False))
-      - name: Commit rate only
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          if '<script>window.alert = function() {};</script>' not in s:
+              s = s.replace('<body class="flex justify-center min-h-screen">', '<body class="flex justify-center min-h-screen">\n<script>window.alert = function() {};</script>', 1)
+
+          start = s.find('<!-- ================= 總覽 ================= -->')
+          end = s.find('<!-- ================= 頁籤 1: 每日行程')
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('overview markers not found')
+          overview = '''<!-- ================= 總覽：所有頁面 ================= -->
+      <section v-if="currentTab === 'overview'" class="space-y-5">
+        <div class="px-1 pt-1">
+          <div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP OVERVIEW</div>
+          <h2 class="editorial-title text-[30px] text-[#183F46] mt-1">旅程總覽</h2>
+          <p class="text-[11px] text-stone-400 mt-2">所有頁面內容一次看完 · 行程、百貨、旅前、分帳、優惠券</p>
+        </div>
+        <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · 2026</div>
+            <div class="editorial-title text-[26px] mt-2">{{ tripInfo.title }}</div>
+            <div class="text-[11px] opacity-75 mt-2">{{ tripInfo.dates }} · {{ tripInfo.subtitle }}</div>
+          </div>
+          <div class="island-glow"></div>
+        </div>
+      </section>
+
+      '''
+          s = s[:start] + overview + s[end:]
+          for tab in ['itinerary','malls','coupons','finance','guide']:
+              old = f'v-if="currentTab === \'{tab}\'"'
+              new = f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"'
+              if old in s:
+                  s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit rate and website
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add rate.json
+          git add rate.json index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Update Taiwan Bank JPY rate'
+          git commit -m 'Make overview show all page content'
           git push
