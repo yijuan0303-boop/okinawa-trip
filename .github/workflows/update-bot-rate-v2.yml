@@ -1,0 +1,101 @@
+name: Taiwan Bank JPY rate updater v2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  update-rate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Taiwan Bank JPY rate and patch website
+        shell: python
+        run: |
+          import csv, io, json, re, urllib.request
+          from datetime import datetime, timezone, timedelta
+          from pathlib import Path
+
+          # 1) Fetch Taiwan Bank official daily CSV server-side.
+          req = urllib.request.Request(
+              'https://rate.bot.com.tw/xrt/flcsv/0/day',
+              headers={'User-Agent': 'Mozilla/5.0'}
+          )
+          with urllib.request.urlopen(req, timeout=30) as r:
+              raw = r.read().decode('utf-8-sig')
+          rows = list(csv.reader(io.StringIO(raw)))
+          jpy = next((row for row in rows if row and row[0].strip().upper() == 'JPY'), None)
+          if not jpy or len(jpy) < 6:
+              raise SystemExit('Taiwan Bank JPY row not found or CSV format changed')
+
+          cash_sell = float(jpy[3].strip())
+          spot_sell = float(jpy[5].strip())
+          updated = datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
+          data = {
+              'currency': 'JPY',
+              'cashSell': cash_sell,
+              'spotSell': spot_sell,
+              'updatedAt': updated,
+              'source': '臺灣銀行',
+              'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW'
+          }
+          Path('rate.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(data, ensure_ascii=False))
+
+          # 2) Make the live website read same-origin rate.json, avoiding browser CORS.
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          pattern = r"const refreshBotRate = async \(\) => \{.*?^\s*\};"
+          replacement = '''const refreshBotRate = async () => {
+            rateLoading.value = true;
+            try {
+              const res = await fetch('./rate.json?ts=' + Date.now(), { cache: 'no-store' });
+              if (!res.ok) throw new Error('rate.json request failed');
+              const data = await res.json();
+              const spotSell = Number(data.spotSell);
+              const cashSell = Number(data.cashSell);
+              if (!Number.isFinite(spotSell) || !Number.isFinite(cashSell)) throw new Error('invalid rate');
+              botRateSell.value = spotSell;
+              botCashSell.value = cashSell;
+              exchangeRate.value = spotSell;
+              botRateUpdated.value = data.updatedAt || '';
+              localStorage.setItem('okinawaBotRate', JSON.stringify({ botRateSell: spotSell, botCashSell: cashSell, botRateUpdated: botRateUpdated.value, source: '臺灣銀行' }));
+            } catch (e) {
+              const cached = JSON.parse(localStorage.getItem('okinawaBotRate') || 'null');
+              if (cached && cached.botRateSell) {
+                botRateSell.value = Number(cached.botRateSell);
+                botCashSell.value = Number(cached.botCashSell) || null;
+                botRateUpdated.value = cached.botRateUpdated || '';
+                exchangeRate.value = botRateSell.value;
+                alert('目前無法取得最新臺銀匯率，已保留上次成功更新的資料。');
+              } else {
+                alert('目前無法取得臺銀匯率，請稍後再試。');
+              }
+            } finally {
+              rateLoading.value = false;
+            }
+          };'''
+          patched, count = re.subn(pattern, replacement, html, count=1, flags=re.S | re.M)
+          if count != 1:
+              raise SystemExit('refreshBotRate function not found in index.html')
+          p.write_text(patched, encoding='utf-8')
+
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html rate.json
+          if git diff --cached --quiet; then
+            echo 'No changes.'
+            exit 0
+          fi
+          git commit -m 'Use Taiwan Bank JPY rate feed'
+          git push
