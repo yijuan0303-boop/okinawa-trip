@@ -92,9 +92,9 @@ jobs:
                 botCashSell.value = Number(cached.botCashSell) || null;
                 botRateUpdated.value = cached.botRateUpdated || '';
                 exchangeRate.value = botRateSell.value;
-                alert('目前無法取得最新臺銀匯率，已保留上次成功更新的資料。');
+                console.warn('目前無法取得臺銀最新匯率，已保留上次成功更新的資料。');
               } else {
-                alert('目前無法取得臺銀匯率，請稍後再試。');
+                console.warn('目前無法取得臺銀匯率，請稍後再試。');
               }
             } finally {
               rateLoading.value = false;
