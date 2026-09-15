@@ -20,7 +20,6 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          # Replace the small overview summary with a real all-pages overview shell.
           start = s.find('<!-- ================= 總覽 ================= -->')
           end = s.find('<!-- ================= 頁籤 1: 每日行程')
           if start < 0 or end < 0 or end <= start:
@@ -30,7 +29,7 @@ jobs:
         <div class="px-1 pt-1">
           <div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP OVERVIEW</div>
           <h2 class="editorial-title text-[30px] text-[#183F46] mt-1">旅程總覽</h2>
-          <p class="text-[11px] text-stone-400 mt-2">所有功能一次看完 · 行程、百貨、旅前、分帳、優惠券</p>
+          <p class="text-[11px] text-stone-400 mt-2">所有頁面內容一次看完 · 行程、百貨、旅前、分帳、優惠券</p>
         </div>
         <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden">
           <div class="relative z-10">
@@ -45,7 +44,6 @@ jobs:
       '''
           s = s[:start] + overview + s[end:]
 
-          # On the overview tab, render every existing page section as well.
           replacements = {
             'v-if="currentTab === \'itinerary\'"': 'v-if="currentTab === \'overview\' || currentTab === \'itinerary\'"',
             'v-if="currentTab === \'malls\'"': 'v-if="currentTab === \'overview\' || currentTab === \'malls\'"',
@@ -69,3 +67,5 @@ jobs:
           git add index.html
           git commit -m 'Make overview show all page content'
           git push
+
+# one-time trigger revision
