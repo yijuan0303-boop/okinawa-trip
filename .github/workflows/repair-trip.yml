@@ -3,57 +3,24 @@ name: Repair trip planner UI
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'Repair trip planner UI'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Restore last good app and apply requested changes
-        shell: python
-        run: |
-          import subprocess, re
-          from pathlib import Path
-          # Restore the verified-good commit before applying the requested UI changes.
-          subprocess.run(['git','checkout','97e37337e160e4200008587a6500ffd64deafb6c','--','index.html'], check=True)
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          a=s.find('.zoom-controls'); b=s.find('\n  </style>',a)
-          if a!=-1 and b!=-1: s=s[:a]+s[b:]
-          s=s.replace('<div id="app" :style="{ zoom: uiZoom }" class=','<div id="app" class=')
-          z1=s.find('    <div class="zoom-controls"'); z2=s.find('    <!-- 主頁面內容 -->',z1)
-          if z1!=-1 and z2!=-1: s=s[:z1]+s[z2:]
-          s=re.sub(r'\s*const uiZoom = ref\(Number\(localStorage\.getItem\(\'oki_ui_zoom\'\) \|\| 1\)\);\s*const adjustZoom = \(delta\) => \{.*?\};\s*const resetZoom = \(\) => \{.*?\};','',s,count=1,flags=re.S)
-          s=s.replace('currentTab, uiZoom, adjustZoom, resetZoom, activeDay','currentTab, activeDay')
-          s=s.replace('<span class="text-[10px] mt-1">旅前</span>','<span class="text-[10px] mt-1">注意事項</span>')
-          s=s.replace('+81-80-1942-1107','+81-90-1942-1107')
-          s=s.replace('駐那霸辦事處・急難','駐那霸辦事處・急難聯絡')
-          s=s.replace('電話號碼僅供查閱・避免誤觸撥號','重要電話僅供查閱・駐那霸辦事處急難電話僅限重大急難使用')
-          marker='        <!-- 2026 日本入境注意事項 -->'
-          flight='''        <!-- 我的機票 -->
-        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">MY FLIGHTS · TIGERAIR TAIWAN</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">我的機票</div><div class="text-[11px] text-stone-400 mt-1">2026/10/23 去程 · 2026/10/26 回程</div></div><div class="p-3 space-y-3"><div class="rounded-[20px] bg-[#F7F6F0] border border-stone-100 p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#78B6B2] uppercase">去程</div><div class="text-[18px] font-black text-[#183F46] mt-1">TPE → OKA</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT232</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/10/23　18:30 → 20:50</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7E</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7D</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div></div><div class="text-[9px] text-stone-400 mt-2">去程機票＋座位服務小計：NT$12,038（2人）</div></div><div class="rounded-[20px] bg-[#DDEDEA] border border-[#C9E4DF] p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#507F7B] uppercase">回程</div><div class="text-[18px] font-black text-[#183F46] mt-1">OKA → TPE</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT231</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/10/26　09:45 → 10:20</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3F</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3E</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div></div><div class="text-[9px] text-stone-400 mt-2">回程機票＋行李＋座位等小計：NT$13,358（2人）</div></div><div class="flex items-center justify-between px-1 pt-1"><span class="text-[10px] font-bold text-stone-500">來回機票總計</span><span class="text-[18px] font-black font-mono text-[#C89C69]">NT$25,396</span></div></div></div>
-        <!-- Visit Japan Web 快速入口 -->
-        <div class="bg-[#183F46] text-white rounded-[26px] overflow-hidden mt-5"><div class="p-4"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">BEFORE ARRIVAL · OFFICIAL</div><div class="editorial-title text-[22px] mt-1">Visit Japan Web</div><div class="text-[11px] text-white/70 mt-1 leading-relaxed">日本數位廳官方入境服務，可事先登錄入境審查、海關申報等資料。</div><a href="https://www.vjw.digital.go.jp/" target="_blank" rel="noopener noreferrer" class="mt-3 w-full py-3 bg-white text-[#183F46] rounded-2xl text-xs font-black flex items-center justify-center gap-2"><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>開啟 Visit Japan Web</a></div></div>
-'''
-          if marker in s and 'MY FLIGHTS · TIGERAIR TAIWAN' not in s: s=s.replace(marker,flight+marker,1)
-          marker2='''        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5">\n          <div class="p-4 border-b border-stone-100">\n            <div class="editorial-kicker text-[8px] font-bold text-rose-500 uppercase">EMERGENCY & FLIGHT</div>'''
-          hotel='''        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">HOTEL CONTACT</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">住宿聯絡</div></div><div class="p-4 flex items-center justify-between gap-3"><div><div class="text-sm font-black text-[#183F46]">Naha West Inn 那霸 WEST INN</div><div class="text-[10px] text-stone-400 mt-1">〒900-0036 沖繩縣那霸市西1-16-7</div><div class="text-[9px] text-stone-400 mt-1">電話：+81-98-862-0048</div></div><a href="tel:+81988620048" class="shrink-0 w-10 h-10 rounded-full bg-[#DDEDEA] text-[#183F46] flex items-center justify-center" title="撥打飯店電話"><i class="fa-solid fa-phone"></i></a></div></div>
-'''
-          if marker2 in s and 'HOTEL CONTACT' not in s: s=s.replace(marker2,hotel+marker2,1)
-          p.write_text(s,encoding='utf-8')
+      - name: Apply repair script
+        run: python3 repair_trip.py
       - name: Commit repaired app
-        shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm -f .github/workflows/repair-trip.yml
+          git rm -f .github/workflows/repair-trip.yml repair_trip.py
           git add index.html
           git commit -m 'Repair trip planner UI'
           git push
