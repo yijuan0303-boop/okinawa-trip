@@ -22,6 +22,7 @@ jobs:
         run: |
           import subprocess, re
           from pathlib import Path
+          # Restore the verified-good commit before applying the requested UI changes.
           subprocess.run(['git','checkout','97e37337e160e4200008587a6500ffd64deafb6c','--','index.html'], check=True)
           p=Path('index.html'); s=p.read_text(encoding='utf-8')
           a=s.find('.zoom-controls'); b=s.find('\n  </style>',a)
