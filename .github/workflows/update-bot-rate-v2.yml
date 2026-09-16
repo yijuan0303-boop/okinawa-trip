@@ -17,14 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update rate and make overview show all pages
+      - name: Update rate and patch trip UI
         shell: python
         run: |
           import json, re, urllib.request
           from pathlib import Path
           from datetime import datetime, timezone, timedelta
 
-          # 1) Update Taiwan Bank JPY rate data only in rate.json.
+          # 1) Update Taiwan Bank JPY rate data.
           url = 'https://raw.githubusercontent.com/haotool/app/data/public/rates/latest.json'
           req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
           with urllib.request.urlopen(req, timeout=30) as r:
@@ -35,34 +35,84 @@ jobs:
           if not isinstance(spot, (int, float)) or not isinstance(cash, (int, float)):
               raise SystemExit('Taiwan Bank JPY rate not found')
           updated = src.get('updateTime') or datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
-          Path('rate.json').write_text(
-              json.dumps({
-                  'currency': 'JPY',
-                  'cashSell': float(cash),
-                  'spotSell': float(spot),
-                  'updatedAt': updated,
-                  'source': '臺灣銀行',
-                  'sourceUrl': 'https://rate.bot.com.tw/xrt?Lang=zh-TW',
-                  'transport': 'Taiwan Bank data mirror (HaoRate providerId=bot)'
-              }, ensure_ascii=False, indent=2) + '\n',
-              encoding='utf-8'
-          )
+          Path('rate.json').write_text(json.dumps({
+              'currency':'JPY','cashSell':float(cash),'spotSell':float(spot),
+              'updatedAt':updated,'source':'臺灣銀行',
+              'sourceUrl':'https://rate.bot.com.tw/xrt?Lang=zh-TW',
+              'transport':'Taiwan Bank data mirror (HaoRate providerId=bot)'
+          }, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
 
-          # 2) Disable browser alert popups without touching the rest of the UI.
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
+
+          # 2) Disable browser alert popups.
           alert_script = '<script>window.alert = function() {};</script>'
           if alert_script not in s:
               body = '<body class="flex justify-center min-h-screen">'
-              s = s.replace(body, body + '\n' + alert_script, 1)
+              s = s.replace(body, body+'\n'+alert_script, 1)
 
-          # 3) IMPORTANT: Overview means ALL existing page sections are visible together.
-          # Keep the original sections and their contents intact; only broaden their v-if.
-          tabs = ['itinerary', 'malls', 'guide', 'finance', 'coupons']
-          for tab in tabs:
-              pattern = rf'v-if="currentTab === \'{tab}\'"'
-              replacement = f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"'
-              s = re.sub(pattern, replacement, s, count=1)
+          # 3) Overview means all existing page sections are visible together.
+          for tab in ['itinerary','malls','guide','finance','coupons']:
+              s = re.sub(
+                  rf'v-if="currentTab === \'{tab}\'"',
+                  f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"',
+                  s, count=1
+              )
+
+          # 4) Enable normal mobile pinch zoom and add in-page +/- controls.
+          s = s.replace(
+              'maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+              'maximum-scale=5.0, user-scalable=yes, viewport-fit=cover', 1
+          )
+          if 'class="zoom-controls"' not in s:
+              s = s.replace(
+                  '.emergency-contact{cursor:default;user-select:text}',
+                  '.emergency-contact{cursor:default;user-select:text}.zoom-controls{position:fixed;right:12px;top:118px;z-index:45;display:flex;flex-direction:column;gap:4px}.zoom-btn{width:32px;height:32px;border-radius:12px;background:rgba(255,255,255,.92);border:1px solid #dfe5e2;box-shadow:0 5px 16px rgba(24,63,70,.10);color:#183F46;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center}.zoom-level{font-size:8px;line-height:1;color:#737B79;text-align:center;padding:2px 0}', 1
+              )
+              s = s.replace(
+                  '<main class="flex-1 overflow-y-auto p-4 hide-scrollbar space-y-4">',
+                  '<div class="zoom-controls" aria-label="畫面縮放"><button class="zoom-btn" @click="adjustZoom(0.1)" title="放大">＋</button><div class="zoom-level">{{ Math.round(uiZoom * 100) }}%</div><button class="zoom-btn" @click="adjustZoom(-0.1)" title="縮小">−</button><button class="zoom-btn text-[10px]" @click="resetZoom" title="恢復">100</button></div>\n\n    <main class="flex-1 overflow-y-auto p-4 hide-scrollbar space-y-4">', 1
+              )
+              s = s.replace(
+                  "const currentTab = ref('overview');",
+                  "const currentTab = ref('overview');\n        const uiZoom = ref(Number(localStorage.getItem('oki_ui_zoom') || 1));\n        const adjustZoom = (delta) => { uiZoom.value = Math.min(1.4, Math.max(0.8, Math.round((uiZoom.value + delta) * 10) / 10)); localStorage.setItem('oki_ui_zoom', uiZoom.value); };\n        const resetZoom = () => { uiZoom.value = 1; localStorage.setItem('oki_ui_zoom', '1'); };",
+                  1
+              )
+              s = s.replace(
+                  '<div id="app" class="w-full max-w-md',
+                  '<div id="app" :style="{ zoom: uiZoom }" class="w-full max-w-md',
+                  1
+              )
+              s = s.replace(
+                  'currentTab, activeDay, activeMall, selectedCategory,',
+                  'currentTab, uiZoom, adjustZoom, resetZoom, activeDay, activeMall, selectedCategory,',
+                  1
+              )
+
+          # 5) Add verified large 3C/electronics stores to the two shopping malls used in the trip.
+          # PARCO CITY: EDION, 1F Blue Zone.
+          if "'EDION 愛電王': '1F 藍區 (大型家電／3C)'" not in s:
+              s = s.replace(
+                  "'星巴克': '1F 綠區 (海景席) & 2F'",
+                  "'星巴克': '1F 綠區 (海景席) & 2F',\n              'EDION 愛電王': '1F 藍區 (大型家電／3C)'",
+                  1
+              )
+          if "{ name: 'EDION 愛電王'" not in s:
+              marker = "{ name: '免稅服務櫃台 (Tax-Free Counter)', area: '1F 綠區中央', tip: '【最重要】購買完畢後可在此辦理商場合併退稅手續。', hot: true },"
+              addition = "{ name: 'EDION 愛電王', area: '1F 藍區', tip: '大型家電與 3C：電視、電腦、印表機、數位相機、手機等，也提供免稅。', hot: true },\n                  "
+              s = s.replace(marker, marker+'\n                  '+addition, 1)
+
+          # AEON MALL Okinawa Rycom: KOJIMA x Bic Camera, 3F #329.
+          if "'KOJIMA × Bic Camera': '3F 329號 (大型家電／3C)'" not in s:
+              s = s.replace(
+                  "'星巴克': '1F & 2F'",
+                  "'星巴克': '1F & 2F',\n              'KOJIMA × Bic Camera': '3F 329號 (大型家電／3C)'",
+                  1
+              )
+          if "{ name: 'KOJIMA × BicCamera', area: '3F 329號'" not in s:
+              marker = "{ name: 'Rycom Gourmet World 美食街', area: '3F/4F 挑高區', tip: '【美食街】石垣牛牛排、拉麵、和風洋食。', hot: true },"
+              addition = "{ name: 'KOJIMA × BicCamera', area: '3F 329號', tip: '大型 3C 與家電，可看電視、相機、遊戲機與遊戲軟體；官方資料標示可免稅。', hot: true },\n                  "
+              s = s.replace(marker, marker+'\n                  '+addition, 1)
 
           p.write_text(s, encoding='utf-8')
 
@@ -72,5 +122,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add rate.json index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Show all page content in overview'
+          git commit -m 'Add zoom controls and mall 3C stores'
           git push
