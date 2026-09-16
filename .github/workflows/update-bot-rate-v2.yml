@@ -24,7 +24,6 @@ jobs:
           from pathlib import Path
           from datetime import datetime, timezone, timedelta
 
-          # 1) Update Taiwan Bank JPY rate data.
           url = 'https://raw.githubusercontent.com/haotool/app/data/public/rates/latest.json'
           req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
           with urllib.request.urlopen(req, timeout=30) as r:
@@ -44,83 +43,53 @@ jobs:
 
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-
-          # 2) Disable browser alert popups.
           alert_script = '<script>window.alert = function() {};</script>'
           if alert_script not in s:
               body = '<body class="flex justify-center min-h-screen">'
               s = s.replace(body, body+'\n'+alert_script, 1)
-
-          # 3) Overview means all existing page sections are visible together.
           for tab in ['itinerary','malls','guide','finance','coupons']:
-              s = re.sub(
-                  rf'v-if="currentTab === \'{tab}\'"',
-                  f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"',
-                  s, count=1
-              )
+              s = re.sub(rf'v-if="currentTab === \'{tab}\'"', f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"', s, count=1)
+          # Keep native mobile/browser zoom only; no custom zoom controls.
+          s = re.sub(r'\n\s*\.zoom-controls\{[^}]*\}\.zoom-btn\{[^}]*\}\.zoom-level\{[^}]*\}', '', s)
+          s = re.sub(r'\n\s*<div class="zoom-controls"[\s\S]*?</div>\s*\n', '\n', s, count=1)
+          s = s.replace(':style="{ zoom: uiZoom }" ', '')
+          s = re.sub(r'\n\s*const uiZoom = ref\([^\n]+\);', '', s)
+          s = re.sub(r'\n\s*const adjustZoom = \(delta\) => \{[^\n]+\};', '', s)
+          s = re.sub(r'\n\s*const resetZoom = \(\) => \{[^\n]+\};', '', s)
+          s = s.replace('uiZoom, adjustZoom, resetZoom,', '')
+          s = s.replace('maximum-scale=1.0, user-scalable=no, viewport-fit=cover','maximum-scale=5.0, user-scalable=yes, viewport-fit=cover',1)
 
-          # 4) Enable normal mobile pinch zoom and add in-page +/- controls.
-          s = s.replace(
-              'maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
-              'maximum-scale=5.0, user-scalable=yes, viewport-fit=cover', 1
-          )
-          if 'class="zoom-controls"' not in s:
-              s = s.replace(
-                  '.emergency-contact{cursor:default;user-select:text}',
-                  '.emergency-contact{cursor:default;user-select:text}.zoom-controls{position:fixed;right:12px;top:118px;z-index:45;display:flex;flex-direction:column;gap:4px}.zoom-btn{width:32px;height:32px;border-radius:12px;background:rgba(255,255,255,.92);border:1px solid #dfe5e2;box-shadow:0 5px 16px rgba(24,63,70,.10);color:#183F46;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center}.zoom-level{font-size:8px;line-height:1;color:#737B79;text-align:center;padding:2px 0}', 1
-              )
-              s = s.replace(
-                  '<main class="flex-1 overflow-y-auto p-4 hide-scrollbar space-y-4">',
-                  '<div class="zoom-controls" aria-label="畫面縮放"><button class="zoom-btn" @click="adjustZoom(0.1)" title="放大">＋</button><div class="zoom-level">{{ Math.round(uiZoom * 100) }}%</div><button class="zoom-btn" @click="adjustZoom(-0.1)" title="縮小">−</button><button class="zoom-btn text-[10px]" @click="resetZoom" title="恢復">100</button></div>\n\n    <main class="flex-1 overflow-y-auto p-4 hide-scrollbar space-y-4">', 1
-              )
-              s = s.replace(
-                  "const currentTab = ref('overview');",
-                  "const currentTab = ref('overview');\n        const uiZoom = ref(Number(localStorage.getItem('oki_ui_zoom') || 1));\n        const adjustZoom = (delta) => { uiZoom.value = Math.min(1.4, Math.max(0.8, Math.round((uiZoom.value + delta) * 10) / 10)); localStorage.setItem('oki_ui_zoom', uiZoom.value); };\n        const resetZoom = () => { uiZoom.value = 1; localStorage.setItem('oki_ui_zoom', '1'); };",
-                  1
-              )
-              s = s.replace(
-                  '<div id="app" class="w-full max-w-md',
-                  '<div id="app" :style="{ zoom: uiZoom }" class="w-full max-w-md',
-                  1
-              )
-              s = s.replace(
-                  'currentTab, activeDay, activeMall, selectedCategory,',
-                  'currentTab, uiZoom, adjustZoom, resetZoom, activeDay, activeMall, selectedCategory,',
-                  1
-              )
+          # Remove visible coupon page.
+          a=s.find('<!-- ================= 頁籤 3: 日本名店折價券')
+          b=s.find('<!-- ================= 頁籤 4: 分帳 ================= -->')
+          if a!=-1 and b!=-1: s=s[:a]+s[b:]
+          s=re.sub(r'\n\s*<button @click="currentTab = \'coupons\'"[\s\S]*?</button>','',s,count=1)
 
-          # 5) Add verified large 3C/electronics stores to the two shopping malls used in the trip.
-          # PARCO CITY: EDION, 1F Blue Zone.
-          if "'EDION 愛電王': '1F 藍區 (大型家電／3C)'" not in s:
-              s = s.replace(
-                  "'星巴克': '1F 綠區 (海景席) & 2F'",
-                  "'星巴克': '1F 綠區 (海景席) & 2F',\n              'EDION 愛電王': '1F 藍區 (大型家電／3C)'",
-                  1
-              )
-          if "{ name: 'EDION 愛電王'" not in s:
-              marker = "{ name: '免稅服務櫃台 (Tax-Free Counter)', area: '1F 綠區中央', tip: '【最重要】購買完畢後可在此辦理商場合併退稅手續。', hot: true },"
-              addition = "{ name: 'EDION 愛電王', area: '1F 藍區', tip: '大型家電與 3C：電視、電腦、印表機、數位相機、手機等，也提供免稅。', hot: true },\n                  "
-              s = s.replace(marker, marker+'\n                  '+addition, 1)
+          # Add map page.
+          marker='<!-- ================= 頁籤 4: 分帳 ================= -->'
+          block='''<!-- ================= 頁籤 3: 地圖 ================= -->
+      <section v-if="currentTab === 'overview' || currentTab === 'map'" class="space-y-5">
+        <div class="px-1 pt-1"><div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP MAP</div><h2 class="editorial-title text-[30px] text-[#183F46] mt-1">沖繩地圖</h2><p class="text-[11px] text-stone-400 mt-2">行程地點、百貨、住宿一鍵開啟 Google Maps</p></div>
+        <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden"><div class="relative z-10"><div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · MAP JOURNAL</div><div class="editorial-title text-[25px] mt-2">今天要去哪裡？</div><div class="text-[11px] opacity-75 mt-2">直接點選地點，就會開啟 Google Maps 導航。</div><div class="flex gap-2 mt-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=那霸WEST+INN+沖繩" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">住宿</a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">PARCO CITY</a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">Rycom</a></div></div><div class="island-glow"></div></div>
+        <div class="bg-white rounded-[24px] border border-stone-200 p-4"><div class="flex items-center justify-between mb-3"><div><div class="text-sm font-black text-[#183F46]">每日行程地圖</div><div class="text-[9px] text-stone-400 mt-1">選擇日期查看當天所有行程點</div></div><a :href="'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((currentDayItinerary.length ? currentDayItinerary[currentDayItinerary.length-1].title : '那霸沖繩') + ' 沖繩')" target="_blank" rel="noopener noreferrer" class="text-[10px] font-black text-[#183F46] border border-stone-200 rounded-full px-3 py-2">開啟導航</a></div><div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"><button v-for="d in 4" :key="d" @click="activeDay=d" :class="activeDay===d ? 'bg-[#183F46] text-white' : 'bg-stone-50 text-stone-500 border border-stone-200'" class="shrink-0 px-4 py-2 rounded-full text-[10px] font-bold">DAY {{ d }}</button></div></div>
+        <div class="space-y-2"><a v-for="(item,idx) in currentDayItinerary" :key="item.id || idx" :href="mapSearchUrl(item.title)" target="_blank" rel="noopener noreferrer" class="block bg-white border border-stone-200 rounded-2xl p-4 hover:border-[#78B6B2] transition"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-2xl bg-[#DDEDEA] text-[#183F46] flex items-center justify-center shrink-0"><i class="fa-solid fa-location-dot"></i></div><div class="min-w-0 flex-1"><div class="text-[9px] text-stone-400 font-mono">{{ item.time }}</div><div class="text-sm font-black text-[#183F46] mt-1">{{ item.title }}</div><div class="text-[10px] text-stone-400 mt-1 truncate">{{ item.locationHint || item.transitMode }}</div></div><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-stone-300"></i></div></a></div>
+        <div class="bg-white rounded-[24px] border border-stone-200 p-4 space-y-2"><div class="text-sm font-black text-[#183F46] mb-3">固定地點</div><a href="https://www.google.com/maps/search/?api=1&query=那霸WEST+INN+沖繩" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">Naha West Inn</b><small class="block text-[9px] text-stone-400 mt-1">那霸市西1-16-7</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">SAN-A 浦添西海岸 PARCO CITY</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／EDION</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">AEON MALL Okinawa Rycom</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／KOJIMA × Bic Camera</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a></div>
+      </section>
 
-          # AEON MALL Okinawa Rycom: KOJIMA x Bic Camera, 3F #329.
-          if "'KOJIMA × Bic Camera': '3F 329號 (大型家電／3C)'" not in s:
-              s = s.replace(
-                  "'星巴克': '1F & 2F'",
-                  "'星巴克': '1F & 2F',\n              'KOJIMA × Bic Camera': '3F 329號 (大型家電／3C)'",
-                  1
-              )
-          if "{ name: 'KOJIMA × BicCamera', area: '3F 329號'" not in s:
-              marker = "{ name: 'Rycom Gourmet World 美食街', area: '3F/4F 挑高區', tip: '【美食街】石垣牛牛排、拉麵、和風洋食。', hot: true },"
-              addition = "{ name: 'KOJIMA × BicCamera', area: '3F 329號', tip: '大型 3C 與家電，可看電視、相機、遊戲機與遊戲軟體；官方資料標示可免稅。', hot: true },\n                  "
-              s = s.replace(marker, marker+'\n                  '+addition, 1)
-
-          p.write_text(s, encoding='utf-8')
+      <!-- ================= 頁籤 4: 分帳 ================= -->'''
+          if marker in s and "currentTab === 'map'" not in s: s=s.replace(marker,block,1)
+          needle="""        const currentDayItinerary = computed(() => {\n          return itineraryList.value.filter(item => item.day === activeDay.value);\n        });\n"""
+          if needle in s and 'const mapSearchUrl' not in s: s=s.replace(needle,needle+"        const mapSearchUrl = (title) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((title || '沖繩') + ' 沖繩');\n",1)
+          s=s.replace('getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon,','getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon, mapSearchUrl,',1)
+          # Remove custom zoom from old return lists if present.
+          s=s.replace('uiZoom, adjustZoom, resetZoom,','')
+          p.write_text(s,encoding='utf-8')
 
       - name: Commit changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add rate.json index.html
+          git add rate.json index.html .github/workflows/update-bot-rate-v2.yml
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Add zoom controls and mall 3C stores'
+          git commit -m 'Preserve editorial UI and add map tab'
           git push
