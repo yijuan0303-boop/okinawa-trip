@@ -1,8 +1,8 @@
 {
   "currency": "JPY",
-  "cashSell": 0.2087,
-  "spotSell": 0.2077,
-  "updatedAt": "2026/09/16 08:28:52",
+  "cashSell": 0.2083,
+  "spotSell": 0.2068,
+  "updatedAt": "2026/09/16 13:08:21",
   "source": "臺灣銀行",
   "sourceUrl": "https://rate.bot.com.tw/xrt?Lang=zh-TW",
   "transport": "Taiwan Bank data mirror (HaoRate providerId=bot)"
