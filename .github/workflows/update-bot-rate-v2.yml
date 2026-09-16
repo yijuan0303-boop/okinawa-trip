@@ -4,68 +4,46 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: '7,22,37,52 * * * *'
 
 permissions:
   contents: write
 
 jobs:
-  update-rate:
+  rebuild:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Update rate and patch trip UI
+      - name: Restore preferred editorial UI and apply final changes
         shell: python
         run: |
-          import json, re, urllib.request
           from pathlib import Path
-          from datetime import datetime, timezone, timedelta
+          import subprocess, re
 
-          url = 'https://raw.githubusercontent.com/haotool/app/data/public/rates/latest.json'
-          req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-          with urllib.request.urlopen(req, timeout=30) as r:
-              src = json.loads(r.read().decode('utf-8', errors='replace'))
-          jpy = src.get('details', {}).get('JPY', {})
-          spot = jpy.get('spot', {}).get('sell')
-          cash = jpy.get('cash', {}).get('sell')
-          if not isinstance(spot, (int, float)) or not isinstance(cash, (int, float)):
-              raise SystemExit('Taiwan Bank JPY rate not found')
-          updated = src.get('updateTime') or datetime.now(timezone(timedelta(hours=8))).strftime('%Y/%m/%d %H:%M:%S')
-          Path('rate.json').write_text(json.dumps({
-              'currency':'JPY','cashSell':float(cash),'spotSell':float(spot),
-              'updatedAt':updated,'source':'臺灣銀行',
-              'sourceUrl':'https://rate.bot.com.tw/xrt?Lang=zh-TW',
-              'transport':'Taiwan Bank data mirror (HaoRate providerId=bot)'
-          }, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+          subprocess.run(['git','show','0044a6a2946174def5cadf8268936049dc724668:index.html'], check=True, stdout=open('index.html','wb'))
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
 
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          alert_script = '<script>window.alert = function() {};</script>'
-          if alert_script not in s:
-              body = '<body class="flex justify-center min-h-screen">'
-              s = s.replace(body, body+'\n'+alert_script, 1)
-          for tab in ['itinerary','malls','guide','finance','coupons']:
-              s = re.sub(rf'v-if="currentTab === \'{tab}\'"', f'v-if="currentTab === \'overview\' || currentTab === \'{tab}\'"', s, count=1)
-          # Keep native mobile/browser zoom only; no custom zoom controls.
-          s = re.sub(r'\n\s*\.zoom-controls\{[^}]*\}\.zoom-btn\{[^}]*\}\.zoom-level\{[^}]*\}', '', s)
-          s = re.sub(r'\n\s*<div class="zoom-controls"[\s\S]*?</div>\s*\n', '\n', s, count=1)
-          s = s.replace(':style="{ zoom: uiZoom }" ', '')
-          s = re.sub(r'\n\s*const uiZoom = ref\([^\n]+\);', '', s)
-          s = re.sub(r'\n\s*const adjustZoom = \(delta\) => \{[^\n]+\};', '', s)
-          s = re.sub(r'\n\s*const resetZoom = \(\) => \{[^\n]+\};', '', s)
-          s = s.replace('uiZoom, adjustZoom, resetZoom,', '')
-          s = s.replace('maximum-scale=1.0, user-scalable=no, viewport-fit=cover','maximum-scale=5.0, user-scalable=yes, viewport-fit=cover',1)
+          # Remove custom zoom UI and zoom state. Native browser/device zoom remains available.
+          s=re.sub(r'\n\s*\.zoom-controls\{[^}]*\}\.zoom-btn\{[^}]*\}\.zoom-level\{[^}]*\}', '', s)
+          s=re.sub(r'\n\s*<div class="zoom-controls"[\s\S]*?</div>\s*\n', '\n', s, count=1)
+          s=s.replace(':style="{ zoom: uiZoom }" ', '')
+          s=re.sub(r'\n\s*const uiZoom = ref\([^\n]+\);', '', s)
+          s=re.sub(r'\n\s*const adjustZoom = \(delta\) => \{[^\n]+\};', '', s)
+          s=re.sub(r'\n\s*const resetZoom = \(\) => \{[^\n]+\};', '', s)
+          s=s.replace('uiZoom, adjustZoom, resetZoom,','')
 
-          # Remove visible coupon page.
+          # Remove the visible coupon page.
           a=s.find('<!-- ================= 頁籤 3: 日本名店折價券')
           b=s.find('<!-- ================= 頁籤 4: 分帳 ================= -->')
-          if a!=-1 and b!=-1: s=s[:a]+s[b:]
-          s=re.sub(r'\n\s*<button @click="currentTab = \'coupons\'"[\s\S]*?</button>','',s,count=1)
+          if a!=-1 and b!=-1:
+              s=s[:a]+s[b:]
+          s=re.sub(r'\n\s*<button @click="currentTab = \'coupons\'"[\s\S]*?</button>', '', s, count=1)
 
-          # Add map page.
+          # Add map page before expenses.
           marker='<!-- ================= 頁籤 4: 分帳 ================= -->'
           block='''<!-- ================= 頁籤 3: 地圖 ================= -->
       <section v-if="currentTab === 'overview' || currentTab === 'map'" class="space-y-5">
@@ -77,19 +55,23 @@ jobs:
       </section>
 
       <!-- ================= 頁籤 4: 分帳 ================= -->'''
-          if marker in s and "currentTab === 'map'" not in s: s=s.replace(marker,block,1)
-          needle="""        const currentDayItinerary = computed(() => {\n          return itineraryList.value.filter(item => item.day === activeDay.value);\n        });\n"""
-          if needle in s and 'const mapSearchUrl' not in s: s=s.replace(needle,needle+"        const mapSearchUrl = (title) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((title || '沖繩') + ' 沖繩');\n",1)
-          s=s.replace('getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon,','getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon, mapSearchUrl,',1)
-          # Remove custom zoom from old return lists if present.
-          s=s.replace('uiZoom, adjustZoom, resetZoom,','')
-          p.write_text(s,encoding='utf-8')
+          if marker in s and "currentTab === 'map'" not in s:
+              s=s.replace(marker,block,1)
 
-      - name: Commit changes
+          needle="""        const currentDayItinerary = computed(() => {\n          return itineraryList.value.filter(item => item.day === activeDay.value);\n        });\n"""
+          if needle in s and 'const mapSearchUrl' not in s:
+              s=s.replace(needle,needle+"        const mapSearchUrl = (title) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((title || '沖繩') + ' 沖繩');\n",1)
+          s=s.replace('getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon,','getDayNoticeIcon, getTransportIcon, getTransportPillStyle, getPackingByCat, getShopCategory, getCategoryColor, getCategoryIcon, mapSearchUrl,',1)
+          p.write_text(s,encoding='utf-8')
+          assert 'zoom-controls' not in s and 'uiZoom' not in s
+          assert "currentTab === 'map'" in s and 'mapSearchUrl' in s
+          assert '優惠券</span>' not in s
+
+      - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add rate.json index.html .github/workflows/update-bot-rate-v2.yml
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Preserve editorial UI and add map tab'
+          rm -f .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt
+          git add index.html rate.json .github/workflows/update-bot-rate-v2.yml .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt
+          git commit -m 'Restore editorial UI and add map tab'
           git push
