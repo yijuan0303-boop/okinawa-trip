@@ -48,7 +48,7 @@ function areaRank(area){const a=norm(area);if(a.includes('本部')||a.includes('
 function timeToMin(t){const m=/^(\d{1,2}):(\d{2})$/.exec(String(t||''));return m?Number(m[1])*60+Number(m[2]):9999;}
 function placeFromItem(x){const p=findPlace(x?.title||x?.name||'');return p||{title:x?.title||x?.name||'行程',area:x?.locationHint||inferArea(x?.title||x?.name||''),time:x?.time||'待確認',stay:x?.stayDuration||'待確認',transit:x?.transitMode||'待確認',note:x?.note||'',officialUrl:x?.officialUrl||''};}
 function toItem(p,day,time){return{day,time:time||p.time||'待確認',stayDuration:p.stay,transitTimeToNext:'待確認',transitKm:'待確認',title:p.title,transitMode:p.transit,locationHint:p.area,officialUrl:p.officialUrl||'',note:p.note||''};}
-function fallbackAdd(place,day,itinerary){const p=findPlace(place)||genericPlace(place);const same=itinerary.filter(x=>String(x?.day||'')===String(day));let time=p.time;if(time!=='待確認'&&same.some(x=>String(x?.time||'')===time)){const m=timeToMin(time)+120;time=String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}return toItem({...p,stay:p.stay,transit:p.transit},day,time);}
+function fallbackAdd(place,day,itinerary){const p=findPlace(place)||genericPlace(place);const same=itinerary.filter(x=>String(x?.day||'')===String(day));let time=p.time;if(time!=='待確認'&&same.some(x=>String(x?.time||'')===time)){const m=timeToMin(time)+120;time=String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}return toItem(p,day,time);}
 function fallbackReplan(day,itinerary,newPlace){const list=itinerary.filter(x=>String(x?.day||'')===String(day)).map(placeFromItem);list.push(findPlace(newPlace)||genericPlace(newPlace));list.sort((a,b)=>areaRank(a.area)-areaRank(b.area)||timeToMin(a.time)-timeToMin(b.time));let cursor=9*60;return list.map(x=>{let t=timeToMin(x.time);if(t===9999||t<cursor)t=cursor;const stay=Math.max(45,parseInt(String(x.stay).match(/\d+/)?.[0]||60,10));cursor=t+stay;return toItem(x,day,String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'));});}
 function extractText(data){if(typeof data?.output_text==='string')return data.output_text.trim();return(data?.output||[]).flatMap(i=>i?.content||[]).map(c=>c?.text).filter(Boolean).join('\n').trim();}
 
@@ -57,13 +57,16 @@ async function openaiPlan(env,mode,place,day,itinerary,trip){
  const prompt=`你是沖繩旅遊行程規劃助手。請根據目前行程新增「${place}」到 ${day}。依地理區域、既有時間、停留時間與減少來回折返安排。請提供 title、day、time、stayDuration、transitMode、locationHint、note、transitTimeToNext、transitKm、officialUrl，以及 reorderedItinerary 陣列。mode=${mode}；若 mode=replan，reorderedItinerary 必須包含該日全部行程；若 mode=add，reorderedItinerary 可為空陣列。不要虛構即時公車班次、票價或即時路況，不確定就寫待確認。只輸出 JSON。\n目前行程：${JSON.stringify(itinerary)}\n旅行資訊：${JSON.stringify(trip)}`;
  const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5.6-luna',input:prompt,store:false,text:{format:{type:'json_object'}}})});
  if(!r.ok)throw new Error(`OpenAI HTTP ${r.status}`);
- const data=await r.json();const text=extractText(data);if(!text)throw new Error('OpenAI 沒有回傳內容');return JSON.parse(text);
+ const data=await r.json();const text=extractText(data);if(!text)throw new Error('OpenAI 沒有回傳內容');
+ const parsed=JSON.parse(text);
+ if(parsed&&parsed.result){return parsed;}
+ return {result:parsed||{},reorderedItinerary:Array.isArray(parsed?.reorderedItinerary)?parsed.reorderedItinerary:[]};
 }
 
 export default{async fetch(request,env){
  if(request.method==='OPTIONS')return new Response('',{status:204,headers:corsHeaders});
  const url=new URL(request.url);
- if(request.method==='GET'&&url.pathname==='/health')return json({ok:true,service:'okinawa-ai-itinerary',fallbackAvailable:true,placeCount:PLACES.length});
+ if(request.method==='GET'&&url.pathname==='/health')return json({ok:true,service:'okinawa-ai-itinerary',fallbackAvailable:true,openaiConfigured:Boolean(env.OPENAI_API_KEY),placeCount:PLACES.length});
  if(request.method!=='POST'||url.pathname!=='/v1/itinerary')return json({error:'Not found'},404);
  let body;try{body=await request.json();}catch{return json({error:'請求內容不是有效 JSON'},400);}
  const place=String(body.place||'').trim();const day=String(body.day||'DAY 1').trim();const mode=body.mode==='replan'?'replan':'add';const itinerary=Array.isArray(body.itinerary)?body.itinerary.slice(0,80):[];const trip=body.trip&&typeof body.trip==='object'?body.trip:{};
