@@ -1,6 +1,11 @@
 name: Deploy Okinawa AI Worker
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-worker/**'
+      - '.github/workflows/deploy-ai-worker.yml'
   workflow_dispatch:
 
 jobs:
