@@ -1,0 +1,46 @@
+name: Fix responsive layout
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-responsive-layout.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix mobile RWD layout
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('maximum-scale=5.0, user-scalable=yes, ', '')
+          s = s.replace('style="zoom:.76" ', '')
+          marker = '    .emergency-contact{cursor:default;user-select:text}\n'
+          css = '''\n    /* RWD: mobile fills the viewport; wider screens use a centered reading column. */\n    #app { width:100%; max-width:480px; margin:0 auto; }\n    @media (min-width:768px) {\n      body { overflow:auto; padding:24px 0; box-sizing:border-box; }\n      #app { min-height:calc(100dvh - 48px); height:calc(100dvh - 48px); border-radius:28px; overflow:hidden; }\n    }\n    @media (max-width:767px) {\n      body { overflow:hidden; }\n      #app { width:100%; max-width:none; margin:0; border-left:0; border-right:0; border-radius:0; }\n    }\n'''
+          if css.strip() not in s:
+              s = s.replace(marker, marker + css)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix responsive mobile layout'
+          git push
+      - name: Remove one-time workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/fix-responsive-layout.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/fix-responsive-layout.yml
+          git diff --cached --quiet || (git commit -m 'Remove temporary responsive fix workflow' && git push)
