@@ -1,0 +1,33 @@
+name: Deploy Okinawa AI Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-worker/**'
+      - '.github/workflows/deploy-ai-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ai-worker
+          command: deploy
+
+      - name: Configure Worker secret
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ai-worker
+          command: secret put OPENAI_API_KEY
+          secrets: |
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
