@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>沖繩特種兵 4 日遊 | 極簡旗艦手帳</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -85,6 +85,17 @@
     .weather-hour+.weather-hour{border-left:1px solid #E8ECEA}
     .mall-editorial-hero{background:linear-gradient(135deg,#183F46,#78B6B2)}
     .emergency-contact{cursor:default;user-select:text}
+
+    /* RWD: mobile fills the viewport; wider screens use a centered reading column. */
+    #app { width:100%; max-width:480px; margin:0 auto; }
+    @media (min-width:768px) {
+      body { overflow:auto; padding:24px 0; box-sizing:border-box; }
+      #app { min-height:calc(100dvh - 48px); height:calc(100dvh - 48px); border-radius:28px; overflow:hidden; }
+    }
+    @media (max-width:767px) {
+      body { overflow:hidden; }
+      #app { width:100%; max-width:none; margin:0; border-left:0; border-right:0; border-radius:0; }
+    }
   </style>
 </head>
 <body class="flex justify-center min-h-screen">
@@ -93,7 +104,7 @@
 <script>window.alert = function() {};</script>
 <script>window.alert = function() {};</script>
 
-  <div id="app" style="zoom:.76" class="w-full max-w-md bg-[#f7f6f0] h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.06)] overflow-hidden pb-24 border-x border-stone-200">
+  <div id="app" class="w-full max-w-md bg-[#f7f6f0] h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.06)] overflow-hidden pb-24 border-x border-stone-200">
     
     <!-- Editorial Header：日系旅誌風格 -->
     <header class="bg-[#F7F6F0] text-[#183F46] pt-7 pb-4 px-5 relative">
