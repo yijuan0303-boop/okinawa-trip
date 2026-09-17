@@ -7,9 +7,11 @@ s = p.read_text(encoding='utf-8')
 s = s.replace('<script>window.alert = function() {};</script>\n', '')
 s = s.replace('<script>window.alert = function() {};</script>', '')
 
-# Replace the test button behavior without relying on alert().
+# Keep the visible, in-card AI connection test idempotent. This workflow can
+# run more than once after a push, so never inject the same function twice.
 needle = "window.openAIItineraryAdd=()=>open('add');window.openAIItineraryReplan=()=>open('replan');window.closeAIItinerary=close;window.configureAI=configure;window.testAI=test;window.runAIItinerary=run;"
-replacement = needle + r'''
+if needle in s and "window.testAI = async function(){" not in s:
+    replacement = needle + r'''
   window.testAI = async function(){
     const card = document.getElementById('ai-itinerary-assistant');
     const info = document.getElementById('ai-connection-status');
@@ -60,7 +62,6 @@ replacement = needle + r'''
     }
   };
 '''
-if needle not in s:
-    raise SystemExit('AI test hook not found; aborting patch')
-s = s.replace(needle, replacement, 1)
+    s = s.replace(needle, replacement, 1)
+
 p.write_text(s, encoding='utf-8')
