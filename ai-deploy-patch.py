@@ -4,119 +4,29 @@ import re
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 
-# Update the existing AI card without re-adding it.
-s = s.replace(
-    '地圖與導航直接開啟 Google Maps。',
-    'AI 後端可安全連線；地圖與導航直接開啟 Google Maps。',
-    1
-)
+s = s.replace('地圖與導航直接開啟 Google Maps。', 'AI 後端可安全連線；地圖與導航直接開啟 Google Maps。', 1)
 
 script = r'''<script id="AI_ITINERARY_ASSISTANT_V1">
 (function(){
   const KEY='okinawa_ai_endpoint';
   const escapeHtml=(v)=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const endpoint=()=>String(localStorage.getItem(KEY)||'').trim().replace(/\/$/,'');
-  const known={
-    '美麗海水族館':['沖繩北部代表性水族館','約 3～3.5 小時','巴士／自駕'],
-    '美國村':['海濱商圈與夕陽景點','約 1.5～2 小時','巴士／計程車'],
-    '波上宮':['那霸市區海崖上的神社','約 40～60 分鐘','公車／計程車'],
-    '寶可夢中心':['沖繩限定 Pokémon Center 購物點','約 1 小時','計程車／單軌'],
-    'PARCO CITY':['大型購物中心與電器採買點','約 2～3 小時','計程車／公車'],
-    'Rycom':['大型複合商場與 KOJIMA × Bic Camera','約 2～3 小時','公車／計程車']
-  };
-  function status(){
-    const el=document.getElementById('ai-connection-status');
-    if(el) el.textContent=endpoint()?'AI 已連線':'AI 尚未連線';
-  }
+  function status(){const el=document.getElementById('ai-connection-status');if(el)el.textContent=endpoint()?'AI 已連線':'AI 尚未連線';}
   function close(){const x=document.getElementById('ai-itinerary-modal');if(x)x.remove()}
-  function configure(){
-    const current=endpoint();
-    const value=prompt('貼上你的 AI Worker 網址（例如 https://okinawa-ai-itinerary.xxx.workers.dev）',current);
-    if(value===null)return;
-    const clean=value.trim().replace(/\/$/,'');
-    if(clean)localStorage.setItem(KEY,clean); else localStorage.removeItem(KEY);
-    status();
-    alert(clean?'AI 連線網址已儲存。':'已清除 AI 連線網址。');
-  }
-  async function test(){
-    const base=endpoint();
-    if(!base){configure();return false}
-    try{
-      const r=await fetch(base+'/health',{cache:'no-store'});
-      if(!r.ok)throw new Error('health '+r.status);
-      alert('AI 後端連線成功！');return true;
-    }catch(e){alert('目前連不上 AI 後端，請確認 Worker 網址與 Cloudflare 部署狀態。');return false}
-  }
-  function open(kind){
-    close();
-    const title=kind==='replan'?'AI 重新編排行程':'AI 幫我新增景點';
-    const m=document.createElement('div');m.id='ai-itinerary-modal';
-    m.style='position:fixed;inset:0;z-index:9999;background:rgba(24,63,70,.45);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px';
-    m.innerHTML=`<div style="width:min(100%,520px);background:#f7f6f0;border-radius:28px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:88vh;overflow:auto">
-      <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:9px;letter-spacing:.22em;color:#78B6B2;font-weight:900">AI ITINERARY</div><div style="font:700 24px Georgia;color:#183F46;margin-top:4px">${title}</div></div><button onclick="window.closeAIItinerary()" style="border:0;background:white;border-radius:12px;width:36px;height:36px">×</button></div>
-      <div style="display:flex;gap:7px;margin-top:10px"><button onclick="window.configureAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:9px;font-size:10px;font-weight:800;color:#183F46">⚙ 設定 AI 連線</button><button onclick="window.testAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:9px;font-size:10px;font-weight:800;color:#183F46">測試連線</button></div>
-      <p style="font-size:11px;color:#7a8582;line-height:1.7;margin:10px 0">輸入景點或需求，AI 會參考你目前的沖繩行程，整理停留時間、交通方向與行程提醒。</p>
-      <div style="display:grid;grid-template-columns:1fr 100px;gap:8px"><input id="ai-place-input" placeholder="例如：首里城、瀨長島、國際通" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white;outline:none"><select id="ai-day-input" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white"><option>DAY 1</option><option>DAY 2</option><option>DAY 3</option><option>DAY 4</option></select></div>
-      <button onclick="window.runAIItinerary()" style="width:100%;margin-top:9px;border:0;border-radius:15px;padding:12px;background:#183F46;color:white;font-weight:900;font-size:11px">開始整理</button>
-      <div id="ai-result" style="margin-top:12px"></div>
-      <div style="font-size:9px;color:#9aa29f;margin-top:10px;line-height:1.6">AI Key 不會放在這個 GitHub Pages 網站；AI 請求會送到你的 Worker，再由 Worker 呼叫 OpenAI。</div>
-    </div>`;
-    document.body.appendChild(m);status();
-  }
-  async function run(){
-    const result=document.getElementById('ai-result');
-    const place=(document.getElementById('ai-place-input')||{}).value?.trim();
-    const day=(document.getElementById('ai-day-input')||{}).value||'DAY 1';
-    if(!place){result.innerHTML='<div style="padding:12px;border-radius:14px;background:#fff4e8;color:#9a6b3a;font-size:11px">請先輸入景點或需求。</div>';return}
-    const base=endpoint();
-    if(!base){result.innerHTML='<div style="padding:12px;border-radius:14px;background:#fff4e8;color:#9a6b3a;font-size:11px">還沒設定 AI Worker。請先按「設定 AI 連線」。</div>';return}
-    result.innerHTML='<div style="padding:14px;border-radius:16px;background:white;color:#7a8582;font-size:11px"><i class="fa-solid fa-spinner fa-spin"></i> AI 正在分析目前行程…</div>';
-    const itinerary=JSON.parse(localStorage.getItem('oki_sleek_itin')||'[]');
-    const trip=JSON.parse(localStorage.getItem('oki_sleek_tripinfo')||'{}');
-    try{
-      const r=await fetch(base+'/v1/itinerary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode: titleMode(),place,day,trip,itinerary})});
-      const data=await r.json().catch(()=>({}));
-      if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
-      renderResult(data.result,day,place);
-    }catch(e){
-      result.innerHTML='<div style="padding:14px;border-radius:16px;background:#fff4e8;color:#9a6b3a;font-size:11px;line-height:1.7">AI 暫時無法回覆。<br>'+escapeHtml(e.message||'連線失敗')+'<br><button onclick="window.configureAI()" style="margin-top:8px;border:0;border-radius:10px;padding:8px 10px;background:#183F46;color:white;font-size:10px;font-weight:800">重新設定連線</button></div>';
-    }
-  }
-  function titleMode(){return document.querySelector('#ai-itinerary-modal [data-mode]')?.dataset.mode||'add'}
-  function renderResult(r,day,place){
-    r=r&&typeof r==='object'?r:{};
-    const d=r.day||day;
-    const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((r.title||place)+' 沖繩');
-    const html=`<div style="background:white;border:1px solid #dce2df;border-radius:18px;padding:15px"><div style="font-size:9px;color:#78B6B2;font-weight:900">${escapeHtml(d)} · AI 整理結果</div><div style="font:700 20px Georgia;color:#183F46;margin-top:3px">${escapeHtml(r.title||place)}</div><div style="margin-top:12px;font-size:11px;color:#53615f;line-height:1.75"><b>建議時間</b>　${escapeHtml(r.time||'待確認')}<br><b>建議停留</b>　${escapeHtml(r.stayDuration||'待確認')}<br><b>交通方向</b>　${escapeHtml(r.transitMode||'待確認')}<br><b>地點</b>　${escapeHtml(r.locationHint||'待確認')}<br><b>行程提醒</b><br>${escapeHtml(r.note||'')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px"><a href="${maps}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;border-radius:14px;padding:11px;background:#DDEDEA;color:#183F46;font-weight:900;font-size:11px">開 Google Maps</a><button onclick="window.aiSaveStop(${JSON.stringify(r)})" style="border:0;border-radius:14px;padding:11px;background:#78B6B2;color:white;font-weight:900;font-size:11px">加入今天行程</button></div></div>`;
-    document.getElementById('ai-result').innerHTML=html;
-  }
-  window.openAIItineraryAdd=()=>open('add');
-  window.openAIItineraryReplan=()=>{open('replan');const m=document.getElementById('ai-itinerary-modal');if(m)m.dataset.mode='replan'};
-  window.closeAIItinerary=close;
-  window.configureAI=configure;
-  window.testAI=test;
-  window.runAIItinerary=run;
-  window.aiSaveStop=function(r){
-    const list=JSON.parse(localStorage.getItem('oki_sleek_itin')||'[]');
-    const n=Number(String(r.day||'DAY 1').replace(/\D/g,''))||1;
-    list.push({day:n,time:r.time||'12:00',stayDuration:r.stayDuration||'1 小時',transitTimeToNext:r.transitTimeToNext||'待確認',transitKm:r.transitKm||'待確認',title:r.title||'AI 建議景點',transitMode:r.transitMode||'大眾運輸',locationHint:r.locationHint||'沖繩本島',officialUrl:r.officialUrl||'',note:r.note||'AI 建議行程'});
-    localStorage.setItem('oki_sleek_itin',JSON.stringify(list));
-    alert('已加入 Day '+n+' 行程。頁面將重新整理。');
-    location.reload();
-  };
-  const originalCard=document.getElementById('ai-itinerary-assistant');
-  if(originalCard){
-    const info=originalCard.querySelector('.mt-3');
-    if(info) info.innerHTML='<i class="fa-solid fa-circle-info"></i> <span id="ai-connection-status">AI 尚未連線</span> · 地圖與導航直接開啟 Google Maps。';
-    const row=document.createElement('div');row.style='margin-top:8px;display:flex;gap:7px';row.innerHTML='<button type="button" onclick="window.configureAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:8px;font-size:9px;font-weight:800;color:#183F46">⚙ AI 連線設定</button><button type="button" onclick="window.testAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:8px;font-size:9px;font-weight:800;color:#183F46">測試 AI</button>';originalCard.querySelector('.relative.z-10')?.appendChild(row);
-  }
-  status();
+  function configure(){const current=endpoint();const value=prompt('貼上你的 AI Worker 網址（例如 https://okinawa-ai-itinerary.xxx.workers.dev）',current);if(value===null)return;const clean=value.trim().replace(/\/$/,'');if(clean)localStorage.setItem(KEY,clean);else localStorage.removeItem(KEY);status();alert(clean?'AI 連線網址已儲存。':'已清除 AI 連線網址。');}
+  async function test(){const base=endpoint();if(!base){configure();return false}try{const r=await fetch(base+'/health',{cache:'no-store'});if(!r.ok)throw new Error('health '+r.status);alert('AI 後端連線成功！');return true}catch(e){alert('目前連不上 AI 後端，請確認 Worker 網址與 Cloudflare 部署狀態。');return false}}
+  function open(kind){close();const title=kind==='replan'?'AI 重新編排行程':'AI 幫我新增景點';const m=document.createElement('div');m.id='ai-itinerary-modal';m.dataset.mode=kind;m.style='position:fixed;inset:0;z-index:9999;background:rgba(24,63,70,.45);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px';m.innerHTML=`<div style="width:min(100%,520px);background:#f7f6f0;border-radius:28px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:88vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:9px;letter-spacing:.22em;color:#78B6B2;font-weight:900">AI ITINERARY</div><div style="font:700 24px Georgia;color:#183F46;margin-top:4px">${title}</div></div><button onclick="window.closeAIItinerary()" style="border:0;background:white;border-radius:12px;width:36px;height:36px">×</button></div><div style="display:flex;gap:7px;margin-top:10px"><button onclick="window.configureAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:9px;font-size:10px;font-weight:800;color:#183F46">⚙ 設定 AI 連線</button><button onclick="window.testAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:9px;font-size:10px;font-weight:800;color:#183F46">測試連線</button></div><p style="font-size:11px;color:#7a8582;line-height:1.7;margin:10px 0">輸入景點或需求，AI 會參考你目前的沖繩行程，整理停留時間、交通方向與行程提醒。</p><div style="display:grid;grid-template-columns:1fr 100px;gap:8px"><input id="ai-place-input" placeholder="例如：首里城、瀨長島、國際通" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white;outline:none"><select id="ai-day-input" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white"><option>DAY 1</option><option>DAY 2</option><option>DAY 3</option><option>DAY 4</option></select></div><button onclick="window.runAIItinerary()" style="width:100%;margin-top:9px;border:0;border-radius:15px;padding:12px;background:#183F46;color:white;font-weight:900;font-size:11px">開始整理</button><div id="ai-result" style="margin-top:12px"></div><div style="font-size:9px;color:#9aa29f;margin-top:10px;line-height:1.6">AI Key 不會放在這個 GitHub Pages 網站；AI 請求會送到你的 Worker，再由 Worker 呼叫 OpenAI。</div></div>`;document.body.appendChild(m);status()}
+  async function run(){const result=document.getElementById('ai-result');const place=(document.getElementById('ai-place-input')||{}).value?.trim();const day=(document.getElementById('ai-day-input')||{}).value||'DAY 1';if(!place){result.innerHTML='<div style="padding:12px;border-radius:14px;background:#fff4e8;color:#9a6b3a;font-size:11px">請先輸入景點或需求。</div>';return}const base=endpoint();if(!base){result.innerHTML='<div style="padding:12px;border-radius:14px;background:#fff4e8;color:#9a6b3a;font-size:11px">還沒設定 AI Worker。請先按「設定 AI 連線」。</div>';return}result.innerHTML='<div style="padding:14px;border-radius:16px;background:white;color:#7a8582;font-size:11px"><i class="fa-solid fa-spinner fa-spin"></i> AI 正在分析目前行程…</div>';let itinerary=[],trip={};try{itinerary=JSON.parse(localStorage.getItem('oki_sleek_itin')||'[]');trip=JSON.parse(localStorage.getItem('oki_sleek_tripinfo')||'{}')}catch(e){}try{const r=await fetch(base+'/v1/itinerary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:document.getElementById('ai-itinerary-modal')?.dataset.mode||'add',place,day,trip,itinerary})});const data=await r.json().catch(()=>({}));if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));renderResult(data.result,day,place)}catch(e){result.innerHTML='<div style="padding:14px;border-radius:16px;background:#fff4e8;color:#9a6b3a;font-size:11px;line-height:1.7">AI 暫時無法回覆。<br>'+escapeHtml(e.message||'連線失敗')+'<br><button onclick="window.configureAI()" style="margin-top:8px;border:0;border-radius:10px;padding:8px 10px;background:#183F46;color:white;font-size:10px;font-weight:800">重新設定連線</button></div>'}}
+  function renderResult(r,day,place){r=r&&typeof r==='object'?r:{};const d=r.day||day;const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((r.title||place)+' 沖繩');document.getElementById('ai-result').innerHTML=`<div style="background:white;border:1px solid #dce2df;border-radius:18px;padding:15px"><div style="font-size:9px;color:#78B6B2;font-weight:900">${escapeHtml(d)} · AI 整理結果</div><div style="font:700 20px Georgia;color:#183F46;margin-top:3px">${escapeHtml(r.title||place)}</div><div style="margin-top:12px;font-size:11px;color:#53615f;line-height:1.75"><b>建議時間</b>　${escapeHtml(r.time||'待確認')}<br><b>建議停留</b>　${escapeHtml(r.stayDuration||'待確認')}<br><b>交通方向</b>　${escapeHtml(r.transitMode||'待確認')}<br><b>地點</b>　${escapeHtml(r.locationHint||'待確認')}<br><b>行程提醒</b><br>${escapeHtml(r.note||'')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px"><a href="${maps}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;border-radius:14px;padding:11px;background:#DDEDEA;color:#183F46;font-weight:900;font-size:11px">開 Google Maps</a><button onclick="window.aiSaveStop(${JSON.stringify(r)})" style="border:0;border-radius:14px;padding:11px;background:#78B6B2;color:white;font-weight:900;font-size:11px">加入今天行程</button></div></div>`}
+  window.openAIItineraryAdd=()=>open('add');window.openAIItineraryReplan=()=>open('replan');window.closeAIItinerary=close;window.configureAI=configure;window.testAI=test;window.runAIItinerary=run;
+  window.aiSaveStop=function(r){let list=[];try{list=JSON.parse(localStorage.getItem('oki_sleek_itin')||'[]')}catch(e){}const n=Number(String(r.day||'DAY 1').replace(/\D/g,''))||1;list.push({day:n,time:r.time||'12:00',stayDuration:r.stayDuration||'1 小時',transitTimeToNext:r.transitTimeToNext||'待確認',transitKm:r.transitKm||'待確認',title:r.title||'AI 建議景點',transitMode:r.transitMode||'大眾運輸',locationHint:r.locationHint||'沖繩本島',officialUrl:r.officialUrl||'',note:r.note||'AI 建議行程'});localStorage.setItem('oki_sleek_itin',JSON.stringify(list));alert('已加入 Day '+n+' 行程。頁面將重新整理。');location.reload()};
+  const originalCard=document.getElementById('ai-itinerary-assistant');if(originalCard){const info=originalCard.querySelector('.mt-3');if(info)info.innerHTML='<i class="fa-solid fa-circle-info"></i> <span id="ai-connection-status">AI 尚未連線</span> · 地圖與導航直接開啟 Google Maps。';const row=document.createElement('div');row.style='margin-top:8px;display:flex;gap:7px';row.innerHTML='<button type="button" onclick="window.configureAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:8px;font-size:9px;font-weight:800;color:#183F46">⚙ AI 連線設定</button><button type="button" onclick="window.testAI()" style="flex:1;border:1px solid #dce2df;background:white;border-radius:12px;padding:8px;font-size:9px;font-weight:800;color:#183F46">測試 AI</button>';originalCard.querySelector('.relative.z-10')?.appendChild(row)}status();
 })();
 </script>'''
 
 pattern = re.compile(r'<script id="AI_ITINERARY_ASSISTANT_V1">.*?</script>', re.S)
 if pattern.search(s):
-    s = pattern.sub(script, s, count=1)
+    s = pattern.sub(lambda _m: script, s, count=1)
 else:
     s = s.replace('</body>', script + '\n</body>', 1)
 
