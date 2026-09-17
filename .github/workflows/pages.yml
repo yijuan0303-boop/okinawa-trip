@@ -18,6 +18,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Add AI itinerary assistant to deployed site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- ================= 頁籤 1: 每日行程 ================= -->'
+          if 'AI_ITINERARY_ASSISTANT_V1' not in s:
+              card='''
+        <!-- AI_ITINERARY_ASSISTANT_V1：行程頁內的 AI 行程助手 -->
+        <div id="ai-itinerary-assistant" class="rounded-[28px] bg-white border border-[#DDEDEA] p-5 shadow-sm relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-[#DDEDEA] opacity-70"></div>
+          <div class="relative z-10">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-[9px] tracking-[.24em] font-black text-[#78B6B2]">AI ITINERARY MODE</div>
+                <h3 class="editorial-title text-[24px] text-[#183F46] mt-1">AI 行程助手</h3>
+                <p class="text-[11px] text-stone-400 mt-1 leading-relaxed">輸入想去的地方，先幫你整理景點、停留時間與交通方向；確認後再加入今天的行程。</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-[#183F46] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <button type="button" onclick="window.openAIItineraryAdd()" class="rounded-2xl bg-[#183F46] text-white py-3 text-[11px] font-black"><i class="fa-solid fa-plus mr-1"></i> AI 幫我新增景點</button>
+              <button type="button" onclick="window.openAIItineraryReplan()" class="rounded-2xl bg-[#DDEDEA] text-[#183F46] py-3 text-[11px] font-black"><i class="fa-solid fa-route mr-1"></i> AI 重新編排行程</button>
+            </div>
+            <div class="mt-3 text-[9px] text-stone-400 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> Google Maps / Routes API 接上後，可自動取得距離、時間與公車路線。</div>
+          </div>
+        </div>
+'''
+              if marker not in s: raise SystemExit('itinerary marker not found')
+              s=s.replace(marker,marker+card,1)
+              script='''
+<script id="AI_ITINERARY_ASSISTANT_V1">
+(function(){
+ const stops={"美麗海水族館":{feature:"沖繩北部代表性水族館，適合安排海洋生物與大型水槽參觀。",stay:"約 3～3.5 小時",mode:"巴士／自駕",note:"建議預留完整參觀時間。"},"美國村":{feature:"海濱商圈與夕陽景點，適合逛街、拍照與晚餐。",stay:"約 1.5～2 小時",mode:"巴士／計程車",note:"傍晚安排較順。"},"波上宮":{feature:"那霸市區海崖上的神社，適合短時間參拜。",stay:"約 40～60 分鐘",mode:"公車／計程車",note:"可與市區行程串接。"},"寶可夢中心":{feature:"沖繩限定商品與 Pokémon Center 購物點。",stay:"約 1 小時",mode:"計程車／單軌",note:"適合排在市區移動段。"},"PARCO CITY":{feature:"大型購物中心，適合電器、服飾與餐飲採買。",stay:"約 2～3 小時",mode:"計程車／公車",note:"可安排集中購物。"},"Rycom":{feature:"大型複合商場，含 KOJIMA × Bic Camera 等店舖。",stay:"約 2～3 小時",mode:"公車／計程車",note:"適合安排購物與電器採買。"}};
+ function closeAI(){const x=document.getElementById('ai-itinerary-modal');if(x)x.remove()}
+ function openAI(kind){closeAI();const title=kind==='replan'?'AI 重新編排行程':'AI 幫我新增景點';const desc=kind==='replan'?'輸入想加入的地點，AI 會先把它放進目前 DAY 的行程結構。接上 Routes API 後再自動重算相鄰交通。':'輸入景點名稱，AI 會先整理景點特色、建議停留時間與交通方向。';const m=document.createElement('div');m.id='ai-itinerary-modal';m.style='position:fixed;inset:0;z-index:9999;background:rgba(24,63,70,.45);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px';m.innerHTML=`<div style="width:min(100%,520px);background:#f7f6f0;border-radius:28px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:88vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:9px;letter-spacing:.22em;color:#78B6B2;font-weight:900">AI ITINERARY</div><div style="font:700 24px Georgia;color:#183F46;margin-top:4px">${title}</div></div><button onclick="window.closeAIItinerary()" style="border:0;background:white;border-radius:12px;width:36px;height:36px">×</button></div><p style="font-size:11px;color:#7a8582;line-height:1.7;margin:10px 0">${desc}</p><div style="display:grid;grid-template-columns:1fr 100px;gap:8px"><input id="ai-place-input" placeholder="例如：首里城、瀨長島、國際通" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white;outline:none"><select id="ai-day-input" style="border:1px solid #dce2df;border-radius:14px;padding:12px;font-size:12px;background:white"><option>DAY 1</option><option>DAY 2</option><option>DAY 3</option><option>DAY 4</option></select></div><button onclick="window.runAIItinerary()" style="width:100%;margin-top:9px;border:0;border-radius:15px;padding:12px;background:#183F46;color:white;font-weight:900;font-size:11px"><i class="fa-solid fa-wand-magic-sparkles"></i> 開始整理</button><div id="ai-result" style="margin-top:12px"></div><div style="font-size:9px;color:#9aa29f;margin-top:10px;line-height:1.6">目前先以行程助手介面與既有沖繩資料做預覽；Google Places / Routes API 尚未在前端放置 API Key。</div></div>`;document.body.appendChild(m)}
+ window.openAIItineraryAdd=()=>openAI('add');window.openAIItineraryReplan=()=>openAI('replan');window.closeAIItinerary=closeAI;
+ window.runAIItinerary=function(){const raw=(document.getElementById('ai-place-input')||{}).value||'';const place=raw.trim();const day=(document.getElementById('ai-day-input')||{}).value||'DAY 1';if(!place){document.getElementById('ai-result').innerHTML='<div style="padding:12px;border-radius:14px;background:#fff4e8;color:#9a6b3a;font-size:11px">請先輸入景點名稱。</div>';return}const key=Object.keys(stops).find(k=>place.includes(k));const d=stops[key]||{feature:'AI 將依景點資料整理主要特色、適合活動與注意事項。',stay:'建議先抓 1～2 小時，再依實際店家／景點營業時間調整。',mode:'Google Maps 路線',note:'接上 Places / Routes API 後可取得即時距離與交通細節。'};const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(place+' 沖繩');document.getElementById('ai-result').innerHTML=`<div style="background:white;border:1px solid #dce2df;border-radius:18px;padding:15px"><div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:9px;color:#78B6B2;font-weight:900">${day} · AI 整理結果</div><div style="font:700 20px Georgia;color:#183F46;margin-top:3px">${place}</div></div><a href="${maps}" target="_blank" rel="noopener" style="font-size:10px;color:#183F46;font-weight:900">地圖 ↗</a></div><div style="margin-top:12px;font-size:11px;color:#53615f;line-height:1.7"><b>景點特色</b><br>${d.feature}<br><br><b>建議停留</b>　${d.stay}<br><b>交通方向</b>　${d.mode}<br><b>備註</b>　${d.note}</div><button onclick="window.aiSaveStop(${JSON.stringify(place)},${JSON.stringify(day)})" style="width:100%;margin-top:12px;border:0;border-radius:14px;padding:11px;background:#78B6B2;color:white;font-weight:900;font-size:11px">加入 AI 行程暫存</button></div>`};
+ window.aiSaveStop=function(place,day){const a=JSON.parse(localStorage.getItem('okinawa_ai_stops')||'[]');a.push({place,day,createdAt:new Date().toISOString()});localStorage.setItem('okinawa_ai_stops',JSON.stringify(a));alert('已加入 AI 行程暫存，可再與正式行程整合。')};
+})();
+</script>
+'''
+              s=s.replace('</body>',script+'</body>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
