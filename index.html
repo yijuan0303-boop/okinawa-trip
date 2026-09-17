@@ -86,17 +86,74 @@
     .mall-editorial-hero{background:linear-gradient(135deg,#183F46,#78B6B2)}
     .emergency-contact{cursor:default;user-select:text}
 
-    /* RWD: mobile fills the viewport; wider screens use a centered reading column. */
-    #app { width:100%; max-width:480px; margin:0 auto; }
-    @media (min-width:768px) {
-      body { overflow:auto; padding:24px 0; box-sizing:border-box; }
-      #app { min-height:calc(100dvh - 48px); height:calc(100dvh - 48px); border-radius:28px; overflow:hidden; }
-    }
-    @media (max-width:767px) {
-      body { overflow:hidden; }
-      #app { width:100%; max-width:none; margin:0; border-left:0; border-right:0; border-radius:0; }
-    }
-  </style>
+/* True mobile-first RWD: the page itself is fluid, never a scaled canvas. */
+html, body {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+}
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: block !important;
+}
+#app {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 100dvh;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  overflow: visible !important;
+}
+#app > main {
+  min-height: 0;
+  overflow: visible !important;
+}
+nav.fixed {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+}
+
+/* Keep comfortable reading width on larger screens, but never shrink mobile into a tiny card. */
+@media screen and (min-width: 768px) {
+  body {
+    overflow-x: hidden;
+    background: #f7f6f0;
+  }
+  #app {
+    width: min(100%, 1100px) !important;
+    max-width: 1100px !important;
+    min-height: 100dvh;
+    margin: 0 auto !important;
+    border-left: 1px solid #e7e5e4;
+    border-right: 1px solid #e7e5e4;
+  }
+  nav.fixed {
+    width: min(100%, 1100px) !important;
+    max-width: 1100px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+/* Small phones: use the actual viewport width and keep everything readable. */
+@media screen and (max-width: 767px) {
+  html, body { width: 100%; }
+  #app { width: 100% !important; max-width: none !important; }
+  main { overflow: visible !important; }
+}
+</style>
 </head>
 <body class="flex justify-center min-h-screen">
 <script>window.alert = function() {};</script>
