@@ -27,6 +27,9 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
+          # Keep the preferred compact whole-page composition, without any visible zoom controls.
+          s=s.replace('<div id="app" class="w-full max-w-md', '<div id="app" style="zoom:.76" class="w-full max-w-md', 1)
+
           # Remove custom zoom UI and zoom state. Native browser/device zoom remains available.
           s=re.sub(r'\n\s*\.zoom-controls\{[^}]*\}\.zoom-btn\{[^}]*\}\.zoom-level\{[^}]*\}', '', s)
           s=re.sub(r'\n\s*<div class="zoom-controls"[\s\S]*?</div>\s*\n', '\n', s, count=1)
@@ -71,7 +74,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          rm -f .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt
-          git add index.html rate.json .github/workflows/update-bot-rate-v2.yml .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt
-          git commit -m 'Restore editorial UI and add map tab'
+          rm -f .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt .github/workflows/apply-ui-fix.yml ui-trigger.txt
+          git add index.html rate.json .github/workflows/update-bot-rate-v2.yml .github/workflows/rebuild-trip-ui.yml .github/workflows/rebuild-trip-ui2.yml ui-rebuild-trigger.txt ui-rebuild-trigger-2.txt .github/workflows/apply-ui-fix.yml ui-trigger.txt
+          git commit -m 'Restore compact editorial UI and map tab'
           git push
