@@ -1,0 +1,103 @@
+name: Apply compact travel layout
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Keep the exact compact editorial scale from the preferred previous layout,
+          # but remove all user-facing zoom controls/state.
+          s = s.replace('<div id="app" class="w-full max-w-md', '<div id="app" style="zoom:.76" class="w-full max-w-md')
+          s = s.replace('    <!-- 底部導航 -->\n    <nav', '    <!-- 底部導航 -->\n    <nav')
+
+          # Remove coupon page from the visible UI.
+          start = s.find('      <!-- ================= 優惠券 ================= -->')
+          if start != -1:
+              end = s.find('      </section>', start)
+              if end != -1:
+                  end += len('      </section>')
+                  s = s[:start] + s[end:]
+
+          # Replace the coupon bottom-nav item with a map item.
+          old_nav = '''        <button @click="currentTab = 'coupons'" :class="currentTab === 'coupons' ? 'text-stone-950 font-bold scale-105' : 'text-stone-400'" class="flex flex-col items-center flex-1 py-1 transition duration-150"><i class="fa-solid fa-ticket text-base"></i><span class="text-[10px] mt-1">優惠券</span></button>'''
+          new_nav = '''        <button @click="currentTab = 'map'" :class="currentTab === 'map' ? 'text-stone-950 font-bold scale-105' : 'text-stone-400'" class="flex flex-col items-center flex-1 py-1 transition duration-150"><i class="fa-solid fa-map-location-dot text-base"></i><span class="text-[10px] mt-1">地圖</span></button>'''
+          s = s.replace(old_nav, new_nav)
+
+          # Remove coupon modal.
+          cstart = s.find('    <!-- Modal: 優惠券 -->')
+          if cstart != -1:
+              cend = s.find('    <!-- Modal: 分帳 -->', cstart)
+              if cend != -1:
+                  s = s[:cstart] + s[cend:]
+
+          # Insert a clear map page before the finance page.
+          marker = '      <!-- ================= 分帳 ================= -->'
+          map_section = '''      <!-- ================= 地圖 ================= -->
+      <section v-if="currentTab === 'overview' || currentTab === 'map'" class="space-y-5">
+        <div class="px-1"><div class="text-[10px] tracking-[.22em] text-stone-400 font-bold">TRIP MAP</div><h2 class="editorial-title text-[30px] text-[#183F46]">旅程地圖</h2><p class="text-[11px] text-stone-400 mt-2">行程地點集中整理・點一下直接開啟 Google Maps 導航</p></div>
+        <div class="mall-editorial-hero rounded-[30px] p-5 text-white relative overflow-hidden"><div class="relative z-10"><div class="text-[9px] tracking-[.25em] opacity-75">OKINAWA MAP</div><div class="editorial-title text-[26px] mt-2">沖繩行程地圖</div><p class="text-[11px] opacity-80 mt-2 leading-relaxed">把住宿、景點、購物與機場放在同一頁，旅途中不用一直翻找。</p></div><div class="island-glow"></div></div>
+        <div class="paper-card rounded-[28px] p-5">
+          <div class="text-[9px] tracking-[.22em] text-stone-400 font-bold">HOTELS & SHOPPING</div>
+          <div class="space-y-2 mt-3">
+            <a v-for="place in [{name:'Naha West Inn 那霸 WEST INN',query:'Naha West Inn Okinawa'},{name:'那霸機場',query:'Naha Airport Okinawa'},{name:'SAN-A 浦添西海岸 PARCO CITY',query:'SAN-A Urasoe West Coast PARCO CITY Okinawa'},{name:'AEON MALL Okinawa Rycom',query:'AEON MALL Okinawa Rycom'}]" :key="place.name" :href="'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(place.query)" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-stone-50 rounded-2xl p-3"><div><div class="text-[11px] font-black text-[#183F46]">{{ place.name }}</div><div class="text-[9px] text-stone-400 mt-1">Google Maps</div></div><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-[#78B6B2]"></i></a>
+          </div>
+        </div>
+        <div v-for="d in 4" :key="'map-day-'+d" class="paper-card rounded-[28px] p-5">
+          <div class="flex items-center justify-between"><div><div class="text-[9px] tracking-[.2em] text-stone-400 font-bold">DAY {{ d }}</div><div class="editorial-title text-[21px] text-[#183F46] mt-1">{{ getDayStrategy(d).title }}</div></div><span class="text-[10px] text-stone-400 font-mono">{{ getDayDate(d) }}</span></div>
+          <div class="space-y-2 mt-4">
+            <a v-for="item in itineraryList.filter(x => x.day === d)" :key="'map-'+item.id" :href="'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(item.location || item.title)" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 bg-stone-50 rounded-2xl p-3"><div class="w-8 h-8 rounded-xl bg-[#DDEDEA] text-[#183F46] flex items-center justify-center shrink-0"><i class="fa-solid fa-location-dot text-[11px]"></i></div><div class="min-w-0 flex-1"><div class="text-[11px] font-black text-[#183F46]">{{ item.title }}</div><div class="text-[9px] text-stone-400 mt-0.5">{{ item.location || '開啟地圖' }}</div></div><i class="fa-solid fa-chevron-right text-[9px] text-stone-300"></i></a>
+          </div>
+        </div>
+      </section>
+
+'''
+          s = s.replace(marker, map_section + marker)
+
+          # Remove coupon-only JS exposure and storage loading where safe; keep legacy data harmless.
+          s = s.replace("const currentTab = ref('overview');", "const currentTab = ref('overview');")
+          s = s.replace("function useCoupon(c){ c.used=!c.used; localStorage.setItem('oki_coupons',JSON.stringify(coupons.value)); }\n", '')
+          s = s.replace("    function saveCoupon(){ if(!couponForm.value.title)return; if(isEditingCoupon.value){ const idx=coupons.value.findIndex(x=>x.id===couponForm.value.id); if(idx>-1)coupons.value[idx]={...couponForm.value}; } else coupons.value.push({id:Date.now(),...couponForm.value,used:false}); localStorage.setItem('oki_coupons',JSON.stringify(coupons.value)); modals.value.coupon=false; }\n", '')
+          s = s.replace("const isEditingCoupon = ref(false);\n", '')
+          s = s.replace("const activeCoupon = ref(null);\n", '')
+          s = s.replace("const couponForm = ref({id:null,title:'',store:'',note:''});\n", '')
+          s = s.replace("    function saveCoupon(){ if(!couponForm.value.title)return; if(isEditingCoupon.value){ const idx=coupons.value.findIndex(x=>x.id===couponForm.value.id); if(idx>-1)coupons.value[idx]={...couponForm.value}; } else coupons.value.push({id:Date.now(),...couponForm.value,used:false}); localStorage.setItem('oki_coupons',JSON.stringify(coupons.value)); modals.value.coupon=false; }\n", '')
+          # Remove the remaining coupon modal state from the object if present.
+          s = s.replace("{ itinerary:false, coupon:false, expense:false, tripInfoModal:false }", "{ itinerary:false, expense:false, tripInfoModal:false }")
+          s = s.replace("coupons,couponForm,", "")
+          s = s.replace("isEditingCoupon,isEditingCoupon,activeCoupon,", "")
+          s = s.replace("isEditingCoupon,activeCoupon,", "")
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Apply compact layout and map"
+          git push
+      - name: Remove temporary workflow
+        if: success()
+        run: |
+          git rm .github/workflows/apply-ui-fix.yml
+          git commit -m "Remove temporary UI workflow"
+          git push
