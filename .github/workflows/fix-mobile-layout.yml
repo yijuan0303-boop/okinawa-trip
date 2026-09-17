@@ -1,5 +1,8 @@
 name: Fix mobile app layout
 on:
+  push:
+    paths:
+      - '.github/workflows/fix-mobile-layout.yml'
   workflow_dispatch:
 permissions:
   contents: write
