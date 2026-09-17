@@ -28,6 +28,7 @@ jobs:
       - name: Apply AI itinerary patch to source
         run: |
           python3 ai-deploy-patch.py
+          python3 ai-vue-bridge.py
           if git diff --quiet -- index.html; then
             echo "AI itinerary already present"
           else
