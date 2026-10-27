@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>沖繩特種兵 4 日遊 | 極簡旗艦手帳</title>
+  <title>沖繩特種兵 5 日 4 夜 | 極簡旗艦手帳</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: 質感襯線與無襯線搭配 -->
@@ -187,7 +187,7 @@ nav.fixed {
       <section v-if="currentTab === 'overview'" class="space-y-5">
         <div class="px-1 pt-1"><div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP OVERVIEW</div><h2 class="editorial-title text-[30px] text-[#183F46] mt-1">旅程總覽</h2><p class="text-[11px] text-stone-400 mt-2">{{ tripInfo.dates }} · 沖繩 4 日旅行手帳</p></div>
         <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden"><div class="relative z-10"><div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · 2026</div><div class="editorial-title text-[26px] mt-2">{{ tripInfo.title }}</div><div class="text-[11px] opacity-75 mt-2">{{ tripInfo.subtitle }}</div></div><div class="island-glow"></div></div>
-        <div class="space-y-2"><button v-for="d in 4" :key="d" @click="activeDay = d; currentTab = 'itinerary'" class="w-full text-left bg-white border border-stone-200 rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#DDEDEA] text-[#183F46] flex flex-col items-center justify-center shrink-0"><span class="text-[8px] font-bold">DAY</span><span class="text-[17px] font-black leading-none">{{ d }}</span></div><div class="min-w-0 flex-1"><div class="text-[9px] text-stone-400">{{ getDayDate(d) }} · {{ getDayWeekday(d) }}</div><div class="text-[15px] font-black text-[#183F46] mt-1">{{ getDayStrategy(d).title }}</div><div class="text-[10px] text-stone-400 mt-1 truncate">{{ itineraryList.filter(x => x.day === d).length }} 個行程點</div></div><i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i></button></div>
+        <div class="space-y-2"><button v-for="d in 5" :key="d" @click="activeDay = d; currentTab = 'itinerary'" class="w-full text-left bg-white border border-stone-200 rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#DDEDEA] text-[#183F46] flex flex-col items-center justify-center shrink-0"><span class="text-[8px] font-bold">DAY</span><span class="text-[17px] font-black leading-none">{{ d }}</span></div><div class="min-w-0 flex-1"><div class="text-[9px] text-stone-400">{{ getDayDate(d) }} · {{ getDayWeekday(d) }}</div><div class="text-[15px] font-black text-[#183F46] mt-1">{{ getDayStrategy(d).title }}</div><div class="text-[10px] text-stone-400 mt-1 truncate">{{ itineraryList.filter(x => x.day === d).length }} 個行程點</div></div><i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i></button></div>
       </section>
 
       <!-- ================= 頁籤 1: 每日行程 ================= -->
@@ -213,7 +213,7 @@ nav.fixed {
       <section v-if="currentTab === 'overview' || currentTab === 'itinerary'" class="space-y-5">
 
         <div class="flex items-end justify-between gap-2 overflow-x-auto hide-scrollbar pb-1">
-          <button v-for="d in 4" :key="d" @click="activeDay = d"
+          <button v-for="d in 5" :key="d" @click="activeDay = d"
                   :class="activeDay === d ? 'bg-[#183F46] text-white shadow-md' : 'text-stone-400 hover:text-[#183F46]'"
                   class="flex-none w-[72px] py-2.5 rounded-full transition duration-200">
             <div class="text-[10px] font-bold tracking-[.12em] uppercase">{{ getDayWeekday(d) }}</div>
@@ -240,7 +240,7 @@ nav.fixed {
             <div>
               <div class="flex items-center gap-2 text-[10px] font-bold text-stone-400">
                 <i class="fa-solid fa-location-dot text-[#78B6B2]"></i>{{ currentDayWeather.area }}
-                <span class="text-stone-300">·</span><span>即時天氣 & 日本時間</span>
+                <span class="text-stone-300">·</span><span>天氣預報・日本時間</span>
               </div>
               <div class="flex items-end gap-2 mt-1">
                 <span class="text-[34px] font-light tracking-tight text-[#183F46]">{{ currentDayWeather.temp }}</span>
@@ -464,10 +464,10 @@ nav.fixed {
       <!-- ================= 頁籤 3: 地圖 ================= -->
       <section v-if="currentTab === 'overview' || currentTab === 'map'" class="space-y-5">
         <div class="px-1 pt-1"><div class="text-[10px] tracking-[.22em] text-stone-400 font-bold uppercase">TRIP MAP</div><h2 class="editorial-title text-[30px] text-[#183F46] mt-1">沖繩地圖</h2><p class="text-[11px] text-stone-400 mt-2">行程地點、百貨、住宿一鍵開啟 Google Maps</p></div>
-        <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden"><div class="relative z-10"><div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · MAP JOURNAL</div><div class="editorial-title text-[25px] mt-2">今天要去哪裡？</div><div class="text-[11px] opacity-75 mt-2">直接點選地點，就會開啟 Google Maps 導航。</div><div class="flex gap-2 mt-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=那霸WEST+INN+沖繩" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">住宿</a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">PARCO CITY</a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">Rycom</a></div></div><div class="island-glow"></div></div>
-        <div class="bg-white rounded-[24px] border border-stone-200 p-4"><div class="flex items-center justify-between mb-3"><div><div class="text-sm font-black text-[#183F46]">每日行程地圖</div><div class="text-[9px] text-stone-400 mt-1">選擇日期查看當天所有行程點</div></div><a :href="'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((currentDayItinerary.length ? currentDayItinerary[currentDayItinerary.length-1].title : '那霸沖繩') + ' 沖繩')" target="_blank" rel="noopener noreferrer" class="text-[10px] font-black text-[#183F46] border border-stone-200 rounded-full px-3 py-2">開啟導航</a></div><div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"><button v-for="d in 4" :key="d" @click="activeDay=d" :class="activeDay===d ? 'bg-[#183F46] text-white' : 'bg-stone-50 text-stone-500 border border-stone-200'" class="shrink-0 px-4 py-2 rounded-full text-[10px] font-bold">DAY {{ d }}</button></div></div>
+        <div class="rounded-[28px] bg-[#183F46] text-white p-5 relative overflow-hidden"><div class="relative z-10"><div class="text-[9px] tracking-[.25em] opacity-70">OKINAWA · MAP JOURNAL</div><div class="editorial-title text-[25px] mt-2">今天要去哪裡？</div><div class="text-[11px] opacity-75 mt-2">直接點選地點，就會開啟 Google Maps 導航。</div><div class="flex gap-2 mt-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=NEST+HOTEL+NAHA+KUMOJI+沖繩" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">住宿</a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">PARCO CITY</a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold">Rycom</a></div></div><div class="island-glow"></div></div>
+        <div class="bg-white rounded-[24px] border border-stone-200 p-4"><div class="flex items-center justify-between mb-3"><div><div class="text-sm font-black text-[#183F46]">每日行程地圖</div><div class="text-[9px] text-stone-400 mt-1">選擇日期查看當天所有行程點</div></div><a :href="'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((currentDayItinerary.length ? currentDayItinerary[currentDayItinerary.length-1].title : '那霸沖繩') + ' 沖繩')" target="_blank" rel="noopener noreferrer" class="text-[10px] font-black text-[#183F46] border border-stone-200 rounded-full px-3 py-2">開啟導航</a></div><div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"><button v-for="d in 5" :key="d" @click="activeDay=d" :class="activeDay===d ? 'bg-[#183F46] text-white' : 'bg-stone-50 text-stone-500 border border-stone-200'" class="shrink-0 px-4 py-2 rounded-full text-[10px] font-bold">DAY {{ d }}</button></div></div>
         <div class="space-y-2"><a v-for="(item,idx) in currentDayItinerary" :key="item.id || idx" :href="mapSearchUrl(item.title)" target="_blank" rel="noopener noreferrer" class="block bg-white border border-stone-200 rounded-2xl p-4 hover:border-[#78B6B2] transition"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-2xl bg-[#DDEDEA] text-[#183F46] flex items-center justify-center shrink-0"><i class="fa-solid fa-location-dot"></i></div><div class="min-w-0 flex-1"><div class="text-[9px] text-stone-400 font-mono">{{ item.time }}</div><div class="text-sm font-black text-[#183F46] mt-1">{{ item.title }}</div><div class="text-[10px] text-stone-400 mt-1 truncate">{{ item.locationHint || item.transitMode }}</div></div><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-stone-300"></i></div></a></div>
-        <div class="bg-white rounded-[24px] border border-stone-200 p-4 space-y-2"><div class="text-sm font-black text-[#183F46] mb-3">固定地點</div><a href="https://www.google.com/maps/search/?api=1&query=那霸WEST+INN+沖繩" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">Naha West Inn</b><small class="block text-[9px] text-stone-400 mt-1">那霸市西1-16-7</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">SAN-A 浦添西海岸 PARCO CITY</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／EDION</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">AEON MALL Okinawa Rycom</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／KOJIMA × Bic Camera</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a></div>
+        <div class="bg-white rounded-[24px] border border-stone-200 p-4 space-y-2"><div class="text-sm font-black text-[#183F46] mb-3">固定地點</div><a href="https://www.google.com/maps/search/?api=1&query=NEST+HOTEL+NAHA+KUMOJI+沖繩" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">NEST HOTEL NAHA KUMOJI</b><small class="block text-[9px] text-stone-400 mt-1">那霸市久茂地2-22-5</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=SAN-A+浦添西海岸+PARCO+CITY" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">SAN-A 浦添西海岸 PARCO CITY</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／EDION</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a><a href="https://www.google.com/maps/search/?api=1&query=AEON+MALL+沖縄ライカム" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl"><span><b class="text-xs text-[#183F46]">AEON MALL Okinawa Rycom</b><small class="block text-[9px] text-stone-400 mt-1">百貨・3C／KOJIMA × Bic Camera</small></span><i class="fa-solid fa-location-arrow text-[#78B6B2]"></i></a></div>
       </section>
 
       <!-- ================= 頁籤 4: 分帳 ================= -->
@@ -621,7 +621,7 @@ nav.fixed {
         </div>
 
         <!-- 我的機票 -->
-        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">MY FLIGHTS · TIGERAIR TAIWAN</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">我的機票</div><div class="text-[11px] text-stone-400 mt-1">2026/10/23 去程 · 2026/10/26 回程</div></div><div class="p-3 space-y-3"><div class="rounded-[20px] bg-[#F7F6F0] border border-stone-100 p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#78B6B2] uppercase">去程</div><div class="text-[18px] font-black text-[#183F46] mt-1">TPE → OKA</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT232</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/10/23　18:30 → 20:50</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7E</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7D</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div></div><div class="text-[9px] text-stone-400 mt-2">去程機票＋座位服務小計：NT$12,038（2人）</div></div><div class="rounded-[20px] bg-[#DDEDEA] border border-[#C9E4DF] p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#507F7B] uppercase">回程</div><div class="text-[18px] font-black text-[#183F46] mt-1">OKA → TPE</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT231</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/10/26　09:45 → 10:20</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3F</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3E</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div></div><div class="text-[9px] text-stone-400 mt-2">回程機票＋行李＋座位等小計：NT$13,358（2人）</div></div><div class="flex items-center justify-between px-1 pt-1"><span class="text-[10px] font-bold text-stone-500">來回機票總計</span><span class="text-[18px] font-black font-mono text-[#C89C69]">NT$25,396</span></div></div></div>
+        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">MY FLIGHTS · TIGERAIR TAIWAN</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">我的機票</div><div class="text-[11px] text-stone-400 mt-1">2026/12/23 去程 · 2026/12/27 回程</div></div><div class="p-3 space-y-3"><div class="rounded-[20px] bg-[#F7F6F0] border border-stone-100 p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#78B6B2] uppercase">去程</div><div class="text-[18px] font-black text-[#183F46] mt-1">TPE → OKA</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT232</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/12/23　18:30 → 20:50</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7E</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div><div class="bg-white rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 7D</div><div class="text-[9px] text-stone-400 mt-1">無託運行李</div></div></div><div class="text-[9px] text-stone-400 mt-2">去程機票＋座位服務小計：NT$12,038（2人）</div></div><div class="rounded-[20px] bg-[#DDEDEA] border border-[#C9E4DF] p-4"><div class="flex items-center justify-between"><div><div class="text-[9px] font-bold tracking-[.16em] text-[#507F7B] uppercase">回程</div><div class="text-[18px] font-black text-[#183F46] mt-1">OKA → TPE</div></div><span class="text-[11px] font-black font-mono text-[#183F46]">IT231</span></div><div class="text-[12px] text-stone-600 mt-2 font-mono">2026/12/27　09:45 → 10:20</div><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">怡娟</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3F</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div><div class="bg-white/80 rounded-xl p-2.5"><div class="text-[9px] text-stone-400">彥伶</div><div class="text-[13px] font-black text-[#183F46] mt-1">座位 3E</div><div class="text-[9px] text-stone-400 mt-1">預付託運 20 kg</div></div></div><div class="text-[9px] text-stone-400 mt-2">回程機票＋行李＋座位等小計：NT$13,358（2人）</div></div><div class="flex items-center justify-between px-1 pt-1"><span class="text-[10px] font-bold text-stone-500">來回機票總計</span><span class="text-[18px] font-black font-mono text-[#C89C69]">NT$25,396</span></div></div></div>
         <!-- Visit Japan Web 快速入口 -->
         <div class="bg-[#183F46] text-white rounded-[26px] overflow-hidden mt-5"><div class="p-4"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">BEFORE ARRIVAL · OFFICIAL</div><div class="editorial-title text-[22px] mt-1">Visit Japan Web</div><div class="text-[11px] text-white/70 mt-1 leading-relaxed">日本數位廳官方入境服務，可事先登錄入境審查、海關申報等資料。</div><a href="https://www.vjw.digital.go.jp/" target="_blank" rel="noopener noreferrer" class="mt-3 w-full py-3 bg-white text-[#183F46] rounded-2xl text-xs font-black flex items-center justify-center gap-2"><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>開啟 Visit Japan Web</a></div></div>
         <!-- 2026 日本入境注意事項 -->
@@ -662,7 +662,7 @@ nav.fixed {
           </div>
         </div>
 
-        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">HOTEL CONTACT</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">住宿聯絡</div></div><div class="p-4 flex items-center justify-between gap-3"><div><div class="text-sm font-black text-[#183F46]">Naha West Inn 那霸 WEST INN</div><div class="text-[10px] text-stone-400 mt-1">〒900-0036 沖繩縣那霸市西1-16-7</div><div class="text-[9px] text-stone-400 mt-1">電話：+81-98-862-0048</div></div><a href="tel:+81988620048" class="shrink-0 w-10 h-10 rounded-full bg-[#DDEDEA] text-[#183F46] flex items-center justify-center" title="撥打飯店電話"><i class="fa-solid fa-phone"></i></a></div></div>
+        <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5"><div class="p-4 border-b border-stone-100"><div class="editorial-kicker text-[8px] font-bold text-[#78B6B2] uppercase">HOTEL CONTACT</div><div class="editorial-title text-[22px] text-[#183F46] mt-1">住宿聯絡</div></div><div class="p-4 flex items-center justify-between gap-3"><div><div class="text-sm font-black text-[#183F46]">NEST HOTEL NAHA KUMOJI 那霸久茂地巢穴飯店</div><div class="text-[10px] text-stone-400 mt-1">〒900-0036 沖繩縣那霸市久茂地2-22-5</div><div class="text-[9px] text-stone-400 mt-1">電話：+81-98-975-7385</div></div><a href="tel:+81989757385" class="shrink-0 w-10 h-10 rounded-full bg-[#DDEDEA] text-[#183F46] flex items-center justify-center" title="撥打飯店電話"><i class="fa-solid fa-phone"></i></a></div></div>
         <div class="bg-white rounded-[26px] border border-stone-200 overflow-hidden mt-5">
           <div class="p-4 border-b border-stone-100">
             <div class="editorial-kicker text-[8px] font-bold text-rose-500 uppercase">EMERGENCY & FLIGHT</div>
@@ -920,8 +920,8 @@ nav.fixed {
         });
 
         const tripInfo = ref({
-          title: '沖繩特種兵 4 日遊',
-          dates: '2026/10/23 - 10/26',
+          title: '沖繩特種兵 5 日 4 夜',
+          dates: '2026/12/23 - 12/27',
           travelers: '',
           subtitle: '觀光巴士 × 單軌 × 計程車'
         });
@@ -958,231 +958,38 @@ nav.fixed {
         });
 
         const weatherDatabase = {
-          1: {
-            area: '那霸市區 (南中城)',
-            temp: '26°C',
-            tempRange: '23°C ~ 28°C',
-            feelTemp: '27°C',
-            condition: '晴時多雲 · 海風舒適',
-            rain: '10%',
-            icon: 'fa-solid fa-cloud-sun',
-            uv: '6 (中量)',
-            wave: '0.6m (平穩)',
-            wind: '東北 3m/s',
-            sunset: '17:49'
-          },
-          2: {
-            area: '北部恩納 & 本部海邊',
-            temp: '27°C',
-            tempRange: '22°C ~ 29°C',
-            feelTemp: '28°C',
-            condition: '碧海藍天 · 紫外線稍高',
-            rain: '15%',
-            icon: 'fa-solid fa-sun',
-            uv: '8 (高量)',
-            wave: '0.8m (適航)',
-            wind: '北風 4m/s',
-            sunset: '17:48'
-          },
-          3: {
-            area: '浦添西海岸 & 那霸市',
-            temp: '25°C',
-            tempRange: '22°C ~ 27°C',
-            feelTemp: '26°C',
-            condition: '多雲微風 · 逛街舒適',
-            rain: '20%',
-            icon: 'fa-solid fa-cloud',
-            uv: '5 (中量)',
-            wave: '0.7m (平穩)',
-            wind: '東北 3m/s',
-            sunset: '17:47'
-          },
-          4: {
-            area: '那霸機場 & 旭橋',
-            temp: '26°C',
-            tempRange: '23°C ~ 28°C',
-            feelTemp: '27°C',
-            condition: '秋高氣爽 · 適合搭機',
-            rain: '10%',
-            icon: 'fa-solid fa-sun',
-            uv: '6 (中量)',
-            wave: '0.5m (平靜)',
-            wind: '東北 2m/s',
-            sunset: '17:46'
-          }
+          1:{area:'那霸市區・抵達日',temp:'待預報',tempRange:'出發前約 16 天更新',feelTemp:'待預報',condition:'目前尚未進入預報期間',rain:'待預報',icon:'fa-solid fa-cloud-sun',uv:'待更新',wave:'待更新',wind:'待更新',sunset:'17:40'},
+          2:{area:'恩納・古宇利島・美麗海',temp:'待預報',tempRange:'出發前約 16 天更新',feelTemp:'待預報',condition:'目前尚未進入預報期間',rain:'待預報',icon:'fa-solid fa-cloud-sun',uv:'待更新',wave:'待更新',wind:'待更新',sunset:'17:40'},
+          3:{area:'那霸市區・瀨長島',temp:'待預報',tempRange:'出發前約 16 天更新',feelTemp:'待預報',condition:'目前尚未進入預報期間',rain:'待預報',icon:'fa-solid fa-cloud-sun',uv:'待更新',wave:'待更新',wind:'待更新',sunset:'17:40'},
+          4:{area:'沖繩來客夢・PARCO CITY',temp:'待預報',tempRange:'出發前約 16 天更新',feelTemp:'待預報',condition:'目前尚未進入預報期間',rain:'待預報',icon:'fa-solid fa-cloud-sun',uv:'待更新',wave:'待更新',wind:'待更新',sunset:'17:40'},
+          5:{area:'那霸機場・返台日',temp:'待預報',tempRange:'出發前約 16 天更新',feelTemp:'待預報',condition:'目前尚未進入預報期間',rain:'待預報',icon:'fa-solid fa-cloud-sun',uv:'待更新',wave:'待更新',wind:'待更新',sunset:'17:40'}
         };
 
-        const itineraryList = ref([
-          { 
-            day: 1, 
-            time: '16:30', 
-            stayDuration: '2.5 小時 (報到登機)',
-            transitTimeToNext: '搭乘班機飛行約 1 小時 20 分',
-            transitKm: '650 km',
-            title: '桃園國際機場 (TPE)', 
-            transitMode: '大眾運輸', 
-            locationHint: '第二航廈出發', 
-            officialUrl: 'https://www.taoyuan-airport.com/', 
-            note: '起飛前確認開通 eSIM/網卡，並填好 Visit Japan Web' 
-          },
-          { 
-            day: 1, 
-            time: '20:50', 
-            stayDuration: '約 1 小時 (入境提領)',
-            transitTimeToNext: '排班計程車約 12 分鐘',
-            transitKm: '5.4 km',
-            title: '抵達那霸機場 (OKA)', 
-            transitMode: '大眾運輸', 
-            locationHint: '國際線航廈', 
-            officialUrl: 'https://www.naha-airport.co.jp/zh-hant/', 
-            note: '領行李出關，航廈門口直接搭排班計程車直達飯店約 ¥1,500' 
-          },
-          { 
-            day: 1, 
-            time: '22:34', 
-            stayDuration: '放行李稍整',
-            transitTimeToNext: '徒步或短程計程車約 8 分鐘',
-            transitKm: '1.2 km',
-            title: '入住 Naha West Inn', 
-            transitMode: '計程車', 
-            locationHint: '旭橋周邊', 
-            officialUrl: 'https://naha-west-inn.jp/', 
-            note: '那霸西旅館放行李 check-in，近單軌旭橋站' 
-          },
-          { 
-            day: 1, 
-            time: '23:59', 
-            stayDuration: '約 50 分鐘',
-            transitTimeToNext: '夜間徒步散步回飯店約 15 分鐘',
-            transitKm: '1.4 km',
-            title: '一蘭 那霸國際通店', 
-            transitMode: '徒步', 
-            locationHint: '國際通商圈', 
-            officialUrl: 'https://ichiran.com/shop/kyushu/naha-kokusaidori/', 
-            note: '24小時營業！深夜特種兵首選熱騰騰豚骨拉麵宵夜' 
-          },
-          { 
-            day: 2, 
-            time: '08:15', 
-            stayDuration: '約 30 分鐘 (早餐集合)',
-            transitTimeToNext: '觀光巴士高速公路約 55 分鐘',
-            transitKm: '48.2 km',
-            title: 'Blue Seal 冰淇淋 (Palette 久茂地)', 
-            transitMode: '徒步', 
-            locationHint: '縣廳前站集合點', 
-            officialUrl: 'https://www.blueseal.co.jp/', 
-            note: '吃經典沖繩冰淇淋，在此集合上北部觀光一日巴士專車' 
-          },
-          { 
-            day: 2, 
-            time: '10:08', 
-            stayDuration: '約 45 分鐘 (散步賞景)',
-            transitTimeToNext: '觀光巴士約 40 分鐘',
-            transitKm: '37.5 km',
-            title: '萬座毛 (Manzamo 象鼻岩)', 
-            transitMode: '一日遊巴士', 
-            locationHint: '恩納村斷崖', 
-            officialUrl: 'https://www.manzamo.jp/', 
-            note: '象鼻絕壁斷崖與大草原，眺望東海海天一色壯闊美景' 
-          },
-          { 
-            day: 2, 
-            time: '11:34', 
-            stayDuration: '約 50 分鐘 (登塔拍照)',
-            transitTimeToNext: '觀光巴士約 35 分鐘',
-            transitKm: '26.8 km',
-            title: '古宇利海洋塔 (Kouri Tower)', 
-            transitMode: '一日遊巴士', 
-            locationHint: '古宇利島跨海大橋', 
-            officialUrl: 'https://www.kouri-oceantower.com/', 
-            note: '巴士開過跨海大橋，登白塔俯瞰漸層古宇利藍海' 
-          },
-          { 
-            day: 2, 
-            time: '13:05', 
-            stayDuration: '約 3.5 小時 (鯨鯊/海豚秀)',
-            transitTimeToNext: '觀光巴士高速公路約 70 分鐘',
-            transitKm: '62.4 km',
-            title: '沖繩美麗海水族館 (黑潮之海)', 
-            transitMode: '一日遊巴士', 
-            locationHint: '海洋博公園', 
-            officialUrl: 'https://churaumi.okinawa/', 
-            note: '特種兵焦點！世界級巨大黑潮之海水槽、鯨鯊與鬼蝠魟悠游' 
-          },
-          { 
-            day: 2, 
-            time: '17:30', 
-            stayDuration: '約 1.5 小時 (日落晚餐)',
-            transitTimeToNext: '觀光巴士約 35 分鐘',
-            transitKm: '18.6 km',
-            title: '美濱美國村 (American Village)', 
-            transitMode: '一日遊巴士', 
-            locationHint: '北谷町美式街區', 
-            officialUrl: 'https://www.okinawa-americanvillage.com/', 
-            note: '異國街道拍照、欣賞落日海灘與特色小店' 
-          },
-          { 
-            day: 2, 
-            time: '19:21', 
-            stayDuration: '約 2 小時 (大採買退稅)',
-            transitTimeToNext: '步行回飯店約 15 分鐘',
-            transitKm: '1.3 km',
-            title: '國際通商店街 (散策採買)', 
-            transitMode: '徒步', 
-            locationHint: '國際通商圈', 
-            officialUrl: 'https://kokusaidori.net/', 
-            note: '一日巴士在縣廳前解散，逛唐吉訶德出示優惠券免稅退稅' 
-          },
-          { 
-            day: 3, 
-            time: '09:14', 
-            stayDuration: '約 50 分鐘 (參拜求御守)',
-            transitTimeToNext: '計程車約 25 分鐘',
-            transitKm: '17.2 km',
-            title: '波上宮 (崖上神社求小書包御守)', 
-            transitMode: '計程車', 
-            locationHint: '若狹海邊斷崖', 
-            officialUrl: 'http://naminouegu.jp/', 
-            note: '琉球八社之首，建於海邊斷崖上的紅色神社，下方是白沙灘' 
-          },
-          { 
-            day: 3, 
-            time: '10:54', 
-            stayDuration: '約 1 小時 (寶可夢血拼)',
-            transitTimeToNext: '計程車約 20 分鐘',
-            transitKm: '12.8 km',
-            title: '沖繩寶可夢中心 (Pokemon Center)', 
-            transitMode: '單軌/計程車', 
-            locationHint: '永旺夢樂城來客夢 1F', 
-            officialUrl: 'https://shop.pokemon.co.jp/shop/pokemoncenter-okinawa/', 
-            note: '搶購沖繩限定花襯衫皮卡丘玩偶與獨家徽章周邊' 
-          },
-          { 
-            day: 3, 
-            time: '12:19', 
-            stayDuration: '約 2.5 小時 (母嬰服飾美食)',
-            transitTimeToNext: '計程車約 15 分鐘直達飯店',
-            transitKm: '9.3 km',
-            title: 'PARCO CITY (Akachan Honpo)', 
-            transitMode: '計程車', 
-            locationHint: '浦添西海岸海景商城', 
-            officialUrl: 'https://www.parcocity.jp/', 
-            note: '沖繩超大海景商城，阿卡將嬰童用品(橘區2F)與各大日牌服飾大採買' 
-          },
-          { 
-            day: 4, 
-            time: '08:10', 
-            stayDuration: '約 2.5 小時 (報到免稅店)',
-            transitTimeToNext: '返台班機飛行約 1 小時 25 分',
-            transitKm: '650 km',
-            title: '那霸機場 (OKA) 國際線', 
-            transitMode: '單軌電車', 
-            locationHint: '旭橋直達航廈', 
-            officialUrl: 'https://www.naha-airport.co.jp/zh-hant/', 
-            note: '搭單軌 11 分鐘不塞車抵達，報到托運、逛最後免稅店' 
-          }
-        ]);
-
+        const itineraryDefaults = [
+{day:1,time:'16:30',stayDuration:'約 2 小時 (報到與登機)',transitTimeToNext:'虎航 IT232 飛行約 2 小時 20 分',transitKm:'約 650 km',title:'桃園國際機場 (TPE)',transitMode:'大眾運輸',locationHint:'第二航廈出發',officialUrl:'https://www.taoyuan-airport.com/',note:'12/23 去程 IT232，18:30 起飛、20:50 抵達那霸；請預留報到與安檢時間。'},
+{day:1,time:'20:50',stayDuration:'約 45 分鐘 (入境與提領行李)',transitTimeToNext:'計程車約 15 分鐘；單軌約 30 分鐘',transitKm:'約 6 km',title:'抵達那霸機場 (OKA)',transitMode:'計程車',locationHint:'國際線航廈',officialUrl:'https://www.naha-airport.co.jp/zh-hant/',note:'領行李出關後前往 NEST HOTEL NAHA KUMOJI；晚間交通方式依當下狀況選擇。'},
+{day:1,time:'22:00',stayDuration:'入住休息',transitTimeToNext:'步行約 5 分鐘至美榮橋站',transitKm:'約 1 km',title:'入住 NEST HOTEL NAHA KUMOJI (那霸久茂地巢穴飯店)',transitMode:'計程車',locationHint:'那霸市久茂地 2-22-5',officialUrl:'https://www.nesthotel.co.jp/nahakumoji/',note:'距單軌美榮橋站步行約 5 分鐘、國際通步行約 10 分鐘；地址與電話可在「注意事項」查看。'},
+{day:2,time:'08:15',stayDuration:'約 30 分鐘 (早餐與集合)',transitTimeToNext:'Klook 一日遊巴士，車程依團體安排',transitKm:'待確認',title:'Klook 北部一日遊集合 (Palette 久茂地附近)',transitMode:'一日遊巴士',locationHint:'那霸縣廳前／久茂地集合點',officialUrl:'https://www.klook.com/zh-TW/',note:'把原本的 Klook 北部行程放在第一個完整遊玩日；集合地點與時間以 Klook 憑證為準。'},
+{day:2,time:'10:08',stayDuration:'約 45 分鐘 (散步賞景)',transitTimeToNext:'觀光巴士約 40 分鐘',transitKm:'約 37 km',title:'萬座毛 (Manzamo 象鼻岩)',transitMode:'一日遊巴士',locationHint:'恩納村海岸',officialUrl:'https://www.manzamo.jp/',note:'象鼻岩斷崖與海景；停留時間以 Klook 當日安排為準。'},
+{day:2,time:'11:34',stayDuration:'約 50 分鐘 (登塔與拍照)',transitTimeToNext:'觀光巴士約 35 分鐘',transitKm:'約 27 km',title:'古宇利海洋塔 (Kouri Ocean Tower)',transitMode:'一日遊巴士',locationHint:'古宇利島跨海大橋',officialUrl:'https://www.kouri-oceantower.com/',note:'從展望台欣賞古宇利島海景；依團體實際停留時間調整。'},
+{day:2,time:'13:05',stayDuration:'約 3.5 小時 (水族館與海洋博公園)',transitTimeToNext:'觀光巴士車程依團體安排',transitKm:'約 62 km',title:'沖繩美麗海水族館 (黑潮之海)',transitMode:'一日遊巴士',locationHint:'海洋博公園',officialUrl:'https://churaumi.okinawa/',note:'重點看黑潮之海、鯨鯊與鬼蝠魟；實際集合時間請依 Klook 行程單。'},
+{day:2,time:'17:30',stayDuration:'約 1.5 小時 (街區散步與晚餐)',transitTimeToNext:'觀光巴士回那霸，依團體安排',transitKm:'待確認',title:'美濱美國村 (American Village)',transitMode:'一日遊巴士',locationHint:'北谷町美式街區',officialUrl:'https://www.okinawa-americanvillage.com/',note:'逛特色小店、海邊散步；若 Klook 團沒有安排此站，請以實際行程為準。'},
+{day:2,time:'19:21',stayDuration:'約 1 小時 (有體力再逛)',transitTimeToNext:'步行或單軌／計程車返回飯店',transitKm:'約 1–2 km',title:'國際通商店街 (自由活動，可彈性取消)',transitMode:'徒步',locationHint:'國際通商圈',officialUrl:'https://kokusaidori.net/',note:'若一日遊回那霸時間允許，可簡單逛街買伴手禮；若太累就直接回飯店休息。'},
+{day:3,time:'09:00',stayDuration:'約 45 分鐘 (庭園散步)',transitTimeToNext:'計程車約 10–15 分鐘',transitKm:'約 2 km',title:'福州園',transitMode:'徒步／計程車',locationHint:'那霸市久米',officialUrl:'',note:'中式庭園，適合早上慢慢散步；入園時間與休園資訊出發前再確認。'},
+{day:3,time:'10:00',stayDuration:'約 45 分鐘 (參拜與看海)',transitTimeToNext:'計程車前往敘敘苑，預留交通時間',transitKm:'約 4–5 km',title:'波上宮與波之上海灘',transitMode:'計程車',locationHint:'那霸市若狹海邊',officialUrl:'http://naminouegu.jp/',note:'參拜求御守，也可從附近步道看海；記得預留時間前往 12:00 的午餐預約。'},
+{day:3,time:'12:00',stayDuration:'約 1.5 小時 (已完成定位／預約)',transitTimeToNext:'單軌電車或計程車前往國際通一帶',transitKm:'約 3–4 km',title:'叙々苑 沖縄おもろまち店 (敘敘苑午餐)',transitMode:'徒步／計程車',locationHint:'おもろまち駅旁，DFS 對面',officialUrl:'https://www.jojoen.co.jp/shop/jojoen/okinawa-1/',note:'12/25 中午 12:00 已定位完成，請保留此時段；店址：沖繩縣那霸市おもろまち 4-19-1，Lukafu Omoromachi 3F。'},
+{day:3,time:'13:45',stayDuration:'約 45–60 分鐘 (市場散策)',transitTimeToNext:'步行逛國際通商店街',transitKm:'步行距離依路線',title:'第一牧志公設市場',transitMode:'單軌電車／徒步',locationHint:'牧志・國際通商圈',officialUrl:'',note:'看看沖繩食材、海鮮與在地小吃；各攤營業時間不同，想吃的店先確認。'},
+{day:3,time:'14:45',stayDuration:'約 1 小時 (自由逛街)',transitTimeToNext:'計程車約 20–30 分鐘前往瀨長島，依路況調整',transitKm:'約 10 km',title:'國際通散步與伴手禮採買',transitMode:'徒步',locationHint:'國際通商店街',officialUrl:'https://kokusaidori.net/',note:'可逛商店、巷弄與唐吉訶德；為了看瀨長島日落，建議不要逛到太晚。'},
+{day:3,time:'16:15',stayDuration:'約 2 小時 (海景與日落)',transitTimeToNext:'計程車或巴士返回那霸，預留 25–40 分鐘',transitKm:'約 10 km',title:'瀨長島 Umikaji Terrace',transitMode:'計程車／巴士',locationHint:'豐見城市瀨長 174-6',officialUrl:'https://www.umikajiterrace.com/',note:'逛白色海景商店、吃甜點與看飛機起降；12 月日落約傍晚 17:40 左右，實際時間看天候，建議提前到。'},
+{day:4,time:'10:00',stayDuration:'約 3 小時 (寶可夢中心與午餐)',transitTimeToNext:'計程車約 35–45 分鐘；公車請以當日班次為準',transitKm:'約 20 km',title:'AEON MALL 沖繩來客夢＋Pokémon Center OKINAWA',transitMode:'計程車／大眾運輸',locationHint:'來客夢 1F 寶可夢中心',officialUrl:'https://shop.pokemon.co.jp/ja/shop/pokemoncenter-okinawa/',note:'寶可夢中心官方店址在 AEON MALL 沖繩來客夢 1F；先逛寶可夢中心與商場、在館內午餐。'},
+{day:4,time:'14:00',stayDuration:'約 5–6 小時 (海景商場購物與晚餐)',transitTimeToNext:'計程車返回那霸約 20–30 分鐘，依路況調整',transitKm:'約 15 km',title:'SAN-A 浦添西海岸 PARCO CITY',transitMode:'計程車／大眾運輸',locationHint:'浦添西海岸海景商城',officialUrl:'https://www.parcocity.jp/',note:'第二站逛 PARCO CITY，可安排服飾、雜貨、伴手禮與晚餐；交通時間請在當天用地圖確認。'},
+{day:5,time:'06:45',stayDuration:'約 10 分鐘步行與候車',transitTimeToNext:'單軌到那霸機場約 30 分鐘；計程車約 15–20 分鐘',transitKm:'約 5 km',title:'從 NEST HOTEL NAHA KUMOJI 出發',transitMode:'徒步／單軌電車',locationHint:'美榮橋站步行約 5 分鐘',officialUrl:'https://www.nesthotel.co.jp/nahakumoji/',note:'回程 IT231 09:45 起飛，建議 06:45 左右出發，預留報到、行李與安檢時間。'},
+{day:5,time:'07:15',stayDuration:'約 2 小時 30 分鐘 (報到與安檢)',transitTimeToNext:'IT231 09:45 起飛',transitKm:'約 650 km',title:'那霸機場 (OKA) 國際線',transitMode:'單軌電車／計程車',locationHint:'國際線航廈',officialUrl:'https://www.naha-airport.co.jp/zh-hant/',note:'確認航班、托運行李與登機門；若航廈或報到櫃檯有變更，以虎航通知為準。'},
+{day:5,time:'09:45',stayDuration:'飛行約 1 小時 35 分鐘',transitTimeToNext:'抵達台灣時間約 10:20',transitKm:'約 650 km',title:'虎航 IT231 那霸 → 桃園',transitMode:'飛機',locationHint:'OKA → TPE',officialUrl:'https://www.tigerairtw.com/',note:'12/27 回程 09:45 起飛、約 10:20 抵達桃園（台灣時間）；時間依新訂位資訊為準。'},
+{day:5,time:'10:20',stayDuration:'行程結束',transitTimeToNext:'',transitKm:'',title:'抵達桃園國際機場 (TPE)',transitMode:'飛機',locationHint:'第二航廈／入境大廳依實際航班資訊',officialUrl:'https://www.taoyuan-airport.com/',note:'抵台時間為台灣當地時間；記得確認行李提領。'}
+        ];
+        const itineraryList = ref(itineraryDefaults.map(item => ({ ...item })));
+        
         const mallList = [
           { id: 'parco', shortName: '浦添 PARCO CITY' },
           { id: 'rycom', shortName: 'AEON 來客夢 (寶可夢)' },
@@ -1524,8 +1331,9 @@ nav.fixed {
         const hourlyWeatherLocations = {
           1: { lat: 26.2124, lon: 127.6809, label: '那霸' },
           2: { lat: 26.4970, lon: 127.8520, label: '恩納／本部' },
-          3: { lat: 26.2450, lon: 127.7210, label: '浦添／那霸' },
-          4: { lat: 26.2124, lon: 127.6809, label: '那霸機場' }
+          3: { lat: 26.2124, lon: 127.6809, label: '那霸市區／瀨長島' },
+          4: { lat: 26.3140, lon: 127.7930, label: '來客夢／百貨區' },
+          5: { lat: 26.2124, lon: 127.6809, label: '那霸機場' }
         };
 
         const weatherIconFromCode = (code) => {
@@ -1550,7 +1358,7 @@ nav.fixed {
           { id: 906, name: '眼罩／耳塞', category: '雜項', checked: false, important: false },
           { id: 907, name: '雨具／折傘', category: '雜項', checked: false, important: false },
           { id: 908, name: '備用眼鏡／隱形眼鏡用品', category: '雜項', checked: false, important: false }];
-          const dateMap = {1:'2026-10-23',2:'2026-10-24',3:'2026-10-25',4:'2026-10-26'};
+          const dateMap = {1:'2026-12-23',2:'2026-12-24',3:'2026-12-25',4:'2026-12-26',5:'2026-12-27'};
           const targetDate = dateMap[activeDay.value];
           const daysAway = Math.ceil((new Date(targetDate + 'T12:00:00+08:00') - new Date()) / 86400000);
 
@@ -1590,7 +1398,13 @@ nav.fixed {
         };
 
         const currentDayWeather = computed(() => {
-          return weatherDatabase[activeDay.value] || weatherDatabase[1];
+          const base = weatherDatabase[activeDay.value] || weatherDatabase[1];
+          if (!hourlyWeather.value.length) return base;
+          const temps = hourlyWeather.value.map(h => Number(h.temp)).filter(Number.isFinite);
+          const rains = hourlyWeather.value.map(h => Number(h.rain)).filter(Number.isFinite);
+          const meanTemp = temps.length ? Math.round(temps.reduce((sum,v) => sum+v,0)/temps.length) : null;
+          const meanRain = rains.length ? Math.round(rains.reduce((sum,v) => sum+v,0)/rains.length) : null;
+          return {...base,temp:meanTemp===null?base.temp:`${meanTemp}°C`,feelTemp:meanTemp===null?base.feelTemp:`${meanTemp}°C`,condition:meanTemp===null?base.condition:'當日逐小時預報參考',rain:meanRain===null?base.rain:`${meanRain}%`};
         });
 
         const selectedMallData = computed(() => {
@@ -1607,19 +1421,20 @@ nav.fixed {
         const totalPaidBy = (person) => personExpenseTotal(person);
 
         const getDayDate = (day) => {
-          const dates = { 1: '10/23 (五)', 2: '10/24 (六)', 3: '10/25 (日)', 4: '10/26 (一)' };
+          const dates = { 1: '12/23 (三)', 2: '12/24 (四)', 3: '12/25 (五)', 4: '12/26 (六)', 5: '12/27 (日)' };
           return dates[day] || '';
         };
 
-        const getDayWeekday = (day) => ({1:'FRI',2:'SAT',3:'SUN',4:'MON'}[day] || '');
-        const getDayNumber = (day) => ({1:'23',2:'24',3:'25',4:'26'}[day] || '');
+        const getDayWeekday = (day) => ({1:'WED',2:'THU',3:'FRI',4:'SAT',5:'SUN'}[day] || '');
+        const getDayNumber = (day) => ({1:'23',2:'24',3:'25',4:'26',5:'27'}[day] || '');
 
         const getDayStrategy = (day) => {
           const strat = {
-            1: { title: 'D1 交通：抵達那霸排班計程車', desc: '深夜抵達免擠單軌，排班計程車直達 Naha West Inn 約 ¥1,500，省時省力。' },
-            2: { title: 'D2 交通：觀光巴士專車暢遊北部', desc: '跨越萬座毛與水族館，跟一日團有專車空調接送，回程放縣廳前直接逛國際通！' },
-            3: { title: 'D3 交通：計程車 + 單軌靈活移動', desc: '波上宮與 PARCO CITY 點對點搭計程車平分超輕鬆，市區逛街搭單軌。' },
-            4: { title: 'D4 交通：旭橋站單軌直達機場', desc: '從飯店步行至旭橋站搭單軌，11 分鐘不塞車直通那霸機場出境大廳。' }
+            1: { title: 'D1 交通：晚間抵達，先入住休息', desc: '12/23 晚上 20:50 抵達那霸，前往久茂地巢穴飯店，第一晚不排太多行程。' },
+            2: { title: 'D2 交通：Klook 北部觀光巴士一日遊', desc: '12/24 保留原本北部團行程，集合時間與停靠點以 Klook 憑證為準。' },
+            3: { title: 'D3 交通：那霸市區＋瀨長島日落', desc: '12/25 中午 12:00 敘敘苑已預約，下午逛牧志市場、國際通，再去瀨長島看海與飛機。' },
+            4: { title: 'D4 交通：來客夢寶可夢中心＋PARCO CITY', desc: '12/26 先去 AEON MALL 沖繩來客夢的寶可夢中心，再到 PARCO CITY；跨區移動請預留車程。' },
+            5: { title: 'D5 交通：提早前往那霸機場', desc: '12/27 回程 IT231 09:45 起飛，建議 06:45 左右從飯店出發，預留報到與安檢。' }
           };
           return strat[day] || {};
         };
@@ -2027,6 +1842,14 @@ nav.fixed {
 
         onMounted(() => {
           loadData();
+          const planVersion = '2026-12-23-27';
+          if (localStorage.getItem('oki_sleek_plan_version') !== planVersion) {
+            tripInfo.value = {...tripInfo.value,title:'沖繩特種兵 5 日 4 夜',dates:'2026/12/23 - 12/27',subtitle:'Klook 北部一日遊 × 那霸市區 × 瀨長島 × 百貨採買'};
+            tripInfoForm.value = {...tripInfo.value};
+            itineraryList.value = itineraryDefaults.map(item => ({...item}));
+            saveData();
+            localStorage.setItem('oki_sleek_plan_version', planVersion);
+          }
           refreshBotRate();
           refreshHourlyWeather();
         });
