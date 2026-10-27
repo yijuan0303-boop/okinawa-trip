@@ -191,25 +191,6 @@ nav.fixed {
       </section>
 
       <!-- ================= 頁籤 1: 每日行程 ================= -->
-        <!-- AI_ITINERARY_ASSISTANT_V1 -->
-        <div id="ai-itinerary-assistant" class="rounded-[28px] bg-white border border-[#DDEDEA] p-5 shadow-sm relative overflow-hidden">
-          <div class="relative z-10">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <div class="text-[9px] tracking-[.24em] font-black text-[#78B6B2]">AI ITINERARY MODE</div>
-                <h3 class="editorial-title text-[24px] text-[#183F46] mt-1">AI 行程助手</h3>
-                <p class="text-[11px] text-stone-400 mt-1 leading-relaxed">輸入想去的地方，先幫你整理景點、停留時間與交通方向；確認後再加入今天的 AI 行程。</p>
-              </div>
-              <div class="w-10 h-10 rounded-2xl bg-[#183F46] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 mt-4">
-              <button type="button" onclick="window.openAIItineraryAdd()" class="rounded-2xl bg-[#183F46] text-white py-3 text-[11px] font-black"><i class="fa-solid fa-plus mr-1"></i> AI 新增景點</button>
-              <button type="button" onclick="window.openAIItineraryReplan()" class="rounded-2xl bg-[#DDEDEA] text-[#183F46] py-3 text-[11px] font-black"><i class="fa-solid fa-route mr-1"></i> AI 重新編排</button>
-            </div>
-            <div class="mt-3 text-[9px] text-stone-400"><i class="fa-solid fa-circle-info"></i> AI 後端可安全連線；AI 後端可安全連線；地圖與導航直接開啟 Google Maps。</div>
-          </div>
-        </div>
-
       <section v-if="currentTab === 'overview' || currentTab === 'itinerary'" class="space-y-5">
 
         <div class="flex items-end justify-between gap-2 overflow-x-auto hide-scrollbar pb-1">
