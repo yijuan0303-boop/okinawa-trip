@@ -8,6 +8,7 @@ s = p.read_text(encoding='utf-8')
 s = re.sub(r'<script id="AI_ITINERARY_ASSISTANT_V1">.*?</script>\s*', '', s, flags=re.S)
 s = re.sub(r'<script id="AI_ITINERARY_REPAIR_V2">.*?</script>\s*', '', s, flags=re.S)
 s = re.sub(r'<script id="AI_ITINERARY_REPAIR_V3">.*?</script>\s*', '', s, flags=re.S)
+s = re.sub(r'<script id="AI_ITINERARY_REPAIR_V4">.*?</script>\s*', '', s, flags=re.S)
 s = s.replace('<script>window.alert = function() {};</script>\n', '')
 s = s.replace('<script>window.alert = function() {};</script>', '')
 
